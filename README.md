@@ -28,7 +28,7 @@ Sin el seed, `main.py` crea una base vacía. Los reportes exportados se guardan 
 `main.py` abre una pantalla de ingreso con dos opciones: **Personal de la biblioteca** (clave `PERSONAL123` y "Ingresar") y **Socios** (DNI y "Consultar"). Cada modo tiene un botón "Salir" que vuelve a esa pantalla. DNI del seed para probar el modo socio:
 
 | DNI | Socio | Situación |
-|---|---|---|
+| --- | --- | --- |
 | 33100200 | Lucía Fernández | habilitada, con un préstamo activo |
 | 35210300 | Martín Gómez | con un préstamo vencido |
 | 30987654 | Valentina Ruiz | suspendida |
@@ -42,7 +42,7 @@ Sin el seed, `main.py` crea una base vacía. Los reportes exportados se guardan 
 
 ## Estructura
 
-```
+```txt
 main.py                     ft.run(main)
 biblioteca/
 ├── modelo/                 Entidades y patrones. Python puro.
@@ -72,7 +72,7 @@ Regla de capas: la interfaz solo llama a los servicios; los servicios usan el mo
 ## Patrones de diseño
 
 | Patrón | Dónde | Qué resuelve |
-|---|---|---|
+| --- | --- | --- |
 | **State** | `modelo/remito.py` | Cada estado del remito (`EnPreparacion`, `Despachado`, `EnTransito`, `Recibido`, `RecibidoConIncidencia`, `Extraviado`, `Anulado`) decide qué operaciones admite; las demás lanzan `TransicionInvalida`. Cada transición queda en el historial (`remito_movimiento`). |
 | **Strategy** | `modelo/sancion.py` | `SancionMonetaria` o `SancionSuspension`. Cada sede configura su política; al devolver con atraso se aplica la de la **sede de origen** del préstamo (`Sede.estrategia_sancion()` → `CalculadoraSancion`). |
 | **Observer** | `modelo/remito.py` + `servicios/observadores.py` | El remito notifica cada cambio de estado; `ActualizadorEjemplares` mueve y actualiza los ejemplares, `ActualizadorPrestamos` avanza o cancela los préstamos. El remito no sabe qué hacen. |
