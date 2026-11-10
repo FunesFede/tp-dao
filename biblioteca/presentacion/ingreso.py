@@ -26,8 +26,8 @@ class PantallaIngreso:
     def __init__(self, page: ft.Page, servicios: Servicios):
         self.page = page
         self.servicios = servicios
-        self.dni = campo("DNI", hint_text="Sin puntos", on_submit=self.ingresar_socio, autofocus=True)
-        self.clave = campo("Clave", hint_text="Clave de personal", on_submit=self.ingresar_personal, autofocus=True)
+        self.dni = campo("DNI", hint_text="Sin puntos", on_submit=self.ingresar_socio)
+        self.clave = campo("Clave", hint_text="Clave de personal", on_submit=self.ingresar_personal, autofocus=True, password=True, can_reveal_password=True)
         self.error = ft.Text("", color="#8a1c1c", size=13, visible=False)
         self.error_personal = ft.Text("", color="#8a1c1c", size=13, visible=False)
         self.aplicacion: AplicacionBiblioteca | AplicacionSocio | None = None   # la que se abrió al ingresar
@@ -76,13 +76,13 @@ class PantallaIngreso:
         abrir_ingreso(self.page, self.servicios)
 
     def ingresar_personal(self, e) -> None:
-        self.aplicacion = AplicacionBiblioteca(self.page, self.servicios, al_salir=self._volver)
         if self.clave.value != "PERSONAL123":
             self.error_personal.value = "Clave incorrecta"
             self.error_personal.visible = True
             self.page.update()
             return
 
+        self.aplicacion = AplicacionBiblioteca(self.page, self.servicios, al_salir=self._volver)
         cambiar_contenido(self.page, self.aplicacion.build())
 
     def ingresar_socio(self, e) -> None:

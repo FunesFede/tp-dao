@@ -8,7 +8,7 @@ Python + SQLite (`sqlite3`, sin ORM) + Flet 1.x para la interfaz + ReportLab y M
 
 La aplicación tiene dos modos, que comparten los mismos servicios, modelo y base:
 
-- **Personal de la biblioteca:** administra sedes, socios, catálogo, préstamos, remitos, reservas y reportes.
+- **Personal de la biblioteca:** ingresa con una clave y administra sedes, socios, catálogo, préstamos, remitos, reservas y reportes.
 - **Consulta para socios:** el socio ingresa con su DNI y consulta el catálogo y la disponibilidad por sede, sus préstamos (abiertos e historial), sus reservas y su situación (habilitado, suspendido o inhabilitado, multas impagas y préstamos abiertos sobre el máximo). Puede crear reservas desde el catálogo y cancelar las suyas; no ve datos de otros socios ni registra préstamos, devoluciones o remitos.
 
 ## Puesta en marcha
@@ -25,7 +25,7 @@ python -m pytest                              # 82 pruebas
 
 Sin el seed, `main.py` crea una base vacía. Los reportes exportados se guardan en `exportes/`.
 
-`main.py` abre una pantalla de ingreso con dos opciones: **Personal de la biblioteca** (botón "Ingresar") y **Socios** (DNI y "Consultar"). Cada modo tiene un botón "Salir" que vuelve a esa pantalla. DNI del seed para probar el modo socio:
+`main.py` abre una pantalla de ingreso con dos opciones: **Personal de la biblioteca** (clave `PERSONAL123` y "Ingresar") y **Socios** (DNI y "Consultar"). Cada modo tiene un botón "Salir" que vuelve a esa pantalla. DNI del seed para probar el modo socio:
 
 | DNI | Socio | Situación |
 |---|---|---|
@@ -35,7 +35,10 @@ Sin el seed, `main.py` crea una base vacía. Los reportes exportados se guardan 
 | 36543210 | Tomás Herrera | inhabilitado manualmente |
 | 40111222 | Camila Torres | con una multa impaga y una reserva asignada |
 
-**Limitación:** el socio ingresa solo con su DNI, sin contraseña. Es un modo de consulta, no una autenticación: cualquiera que conozca un DNI puede ver los datos de ese socio y gestionar sus reservas.
+**Limitaciones del ingreso** (ninguno de los dos modos es una autenticación real):
+
+- El personal ingresa con una única clave compartida, fija y escrita en el código. No hay usuarios, roles ni forma de cambiarla desde la aplicación.
+- El socio ingresa solo con su DNI, sin contraseña. Es un modo de consulta: cualquiera que conozca un DNI puede ver los datos de ese socio y gestionar sus reservas.
 
 ## Estructura
 
