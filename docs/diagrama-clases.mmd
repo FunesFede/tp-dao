@@ -1,0 +1,231 @@
+classDiagram
+    direction TB
+
+    %% ===== Catálogo y socios =====
+    class Sede {
+        +nombre: str
+        +direccion: str
+        +telefono: str
+        +email: str
+        +horario: str
+        +activa: bool
+        +fecha_baja: date
+        +politica_sancion: str
+        +monto_por_dia: float
+        +factor_suspension: int
+        +dar_de_baja(fecha)
+        +estrategia_sancion() EstrategiaSancion
+    }
+    class Socio {
+        +dni: str
+        +nombre: str
+        +apellido: str
+        +email: str
+        +suspendido_hasta: date
+        +inhabilitado_manual: bool
+        +motivo_inhabilitacion: str
+        +esta_inhabilitado(hoy) bool
+        +exigir_habilitado(hoy)
+        +suspender_hasta(fecha)
+        +inhabilitar(motivo)
+        +habilitar()
+    }
+    class Libro {
+        +isbn: str
+        +titulo: str
+        +autor: str
+        +editorial: str
+        +anio: int
+        +tipo_material: str
+        +ejemplares_disponibles(sede) list~Ejemplar~
+    }
+    class Ejemplar {
+        +codigo_inventario: str
+        +estado: str
+        +estado_fisico: str
+        +esta_disponible() bool
+        +pertenece_a(sede_id) bool
+        +esta_en_su_sede() bool
+        +apartar()
+        +liberar()
+        +prestar()
+        +devolver(sede_id, estado_fisico)
+        +despachar()
+        +recibir_en(sede_id, resultado, apartado)
+        +dar_de_baja()
+    }
+
+    %% ===== Circulación =====
+    class Prestamo {
+        +tipo: str
+        +fecha_solicitud: datetime
+        +fecha_inicio: datetime
+        +fecha_vencimiento: date
+        +fecha_devolucion: datetime
+        +estado: str
+        +es_interbibliotecario() bool
+        +marcar_en_transito()
+        +marcar_listo_para_retiro()
+        +entregar(ahora)
+        +cancelar()
+        +marcar_vencido(hoy) bool
+        +dias_atraso(fecha) int
+        +registrar_devolucion(ahora)
+    }
+    class Reserva {
+        +fecha_reserva: datetime
+        +fecha_expiracion: date
+        +estado: str
+        +asignar(ejemplar_id, hoy)
+        +cumplir()
+        +cancelar()
+        +expirar(hoy) bool
+    }
+    class Devolucion {
+        +fecha: datetime
+        +estado_fisico: str
+        +observaciones: str
+    }
+
+    %% ===== Remito: patrón State =====
+    class Remito {
+        +numero: str
+        -_estado: EstadoRemito
+        -_observadores: list~ObservadorRemito~
+        +ejemplares: dict
+        +recepcion: dict
+        +estado() str
+        +agregar_ejemplar(ejemplar_id, prestamo_id)
+        +quitar_ejemplar(ejemplar_id)
+        +despachar(sede_id)
+        +registrar_transito(sede_id, observacion)
+        +recibir(sede_id, incidencias)
+        +declarar_extravio(sede_id, observacion)
+        +anular(sede_id, motivo)
+        +tiempo_en_transito() timedelta
+        +suscribir(observador)
+        +desuscribir(observador)
+        -_notificar(anterior, nuevo)
+        -_cambiar_estado(nuevo, sede_id, observacion)
+    }
+    class Movimiento {
+        +estado_anterior: str
+        +estado_nuevo: str
+        +fecha_hora: datetime
+        +sede_id: int
+        +observacion: str
+    }
+    class EstadoRemito {
+        <<abstract>>
+        +codigo: str
+        +es_final: bool
+        +agregar_ejemplar(remito, ejemplar_id, prestamo_id)
+        +quitar_ejemplar(remito, ejemplar_id)
+        +despachar(remito, sede_id)
+        +registrar_transito(remito, sede_id, observacion)
+        +recibir(remito, sede_id, incidencias)
+        +declarar_extravio(remito, sede_id, observacion)
+        +anular(remito, sede_id, motivo)
+    }
+    class EnPreparacion
+    class EnCamino {
+        <<abstract>>
+    }
+    class Despachado
+    class EnTransito
+    class EstadoFinal {
+        <<abstract>>
+    }
+    class Recibido
+    class RecibidoConIncidencia
+    class Extraviado
+    class Anulado
+
+    %% ===== Observer sobre el remito =====
+    class ObservadorRemito {
+        <<abstract>>
+        +actualizar(remito, estado_anterior, estado_nuevo)
+    }
+    class ActualizadorEjemplares {
+        +actualizar(remito, estado_anterior, estado_nuevo)
+    }
+    class ActualizadorPrestamos {
+        +actualizar(remito, estado_anterior, estado_nuevo)
+    }
+
+    %% ===== Sanciones: patrón Strategy =====
+    class EstrategiaSancion {
+        <<abstract>>
+        +aplicar(prestamo, socio, dias_atraso, ahora) Sancion
+    }
+    class SancionMonetaria {
+        +monto_por_dia: float
+        +aplicar(prestamo, socio, dias_atraso, ahora) Sancion
+    }
+    class SancionSuspension {
+        +factor: int
+        +aplicar(prestamo, socio, dias_atraso, ahora) Sancion
+    }
+    class CalculadoraSancion {
+        -estrategia: EstrategiaSancion
+        +calcular(prestamo, socio, ahora) Sancion
+        +cambiar_estrategia(estrategia)
+    }
+    class Sancion {
+        <<abstract>>
+        +motivo: str
+        +dias_atraso: int
+        +fecha: datetime
+    }
+    class Multa {
+        +monto: float
+        +pagada: bool
+        +pagar()
+    }
+    class Suspension {
+        +suspendido_hasta: date
+    }
+
+    %% ===== Relaciones =====
+    Socio "*" --> "1" Sede : sede de alta
+    Libro "1" o-- "*" Ejemplar : copias
+    Ejemplar "*" --> "1" Sede : propietaria / ubicacion actual
+
+    Prestamo "*" --> "1" Socio
+    Prestamo "*" --> "1" Ejemplar
+    Prestamo "*" --> "2" Sede : origen / destino
+    Reserva "*" --> "1" Socio
+    Reserva "*" --> "1" Libro
+    Reserva "*" --> "0..1" Ejemplar : asignado
+    Devolucion "0..1" --> "1" Prestamo
+
+    Remito "*" --> "2" Sede : origen / destino
+    Remito "1" --> "1..*" Ejemplar : transporta
+    Remito "1" *-- "1..*" Movimiento : historial
+    Remito "1" --> "1" EstadoRemito : estado actual
+
+    EstadoRemito <|-- EnPreparacion
+    EstadoRemito <|-- EnCamino
+    EstadoRemito <|-- EstadoFinal
+    EnCamino <|-- Despachado
+    EnCamino <|-- EnTransito
+    EstadoFinal <|-- Recibido
+    EstadoFinal <|-- RecibidoConIncidencia
+    EstadoFinal <|-- Extraviado
+    EstadoFinal <|-- Anulado
+
+    Remito "1" o-- "*" ObservadorRemito : notifica
+    ObservadorRemito <|-- ActualizadorEjemplares
+    ObservadorRemito <|-- ActualizadorPrestamos
+    ActualizadorEjemplares ..> Ejemplar : actualiza
+    ActualizadorPrestamos ..> Prestamo : actualiza
+
+    EstrategiaSancion <|-- SancionMonetaria
+    EstrategiaSancion <|-- SancionSuspension
+    CalculadoraSancion "1" --> "1" EstrategiaSancion : usa
+    Sede ..> EstrategiaSancion : configura
+    EstrategiaSancion ..> Sancion : crea
+    Sancion <|-- Multa
+    Sancion <|-- Suspension
+    Sancion "*" --> "1" Prestamo
+    Sancion "*" --> "1" Socio

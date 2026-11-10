@@ -1,0 +1,4 @@
+flet[all]>=1.1,<2
+reportlab>=4.0
+matplotlib>=3.8
+pytest>=8.0

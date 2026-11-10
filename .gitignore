@@ -1,0 +1,15 @@
+# Material de la cátedra: no se versiona, solo los resúmenes en Markdown
+docs/apuntes/*.pdf
+docs/apuntes/*.docx
+
+# Base de datos local
+*.db
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+
+# Reportes exportados desde la aplicación
+exportes/
