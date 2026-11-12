@@ -8,7 +8,8 @@ from ..modelo import ErrorNegocio
 from ..servicios import Servicios
 from .app import AplicacionBiblioteca
 from .app_socio import AplicacionSocio
-from .componentes import AZUL, campo
+from .componentes import campo
+from .estilo import ACENTO, ERROR, LINEA, SUPERFICIE, FUENTE_SUBTITULO, TEXTO_SUAVE, encabezado
 
 
 def cambiar_contenido(page: ft.Page, control: ft.Control) -> None:
@@ -28,8 +29,8 @@ class PantallaIngreso:
         self.servicios = servicios
         self.dni = campo("DNI", hint_text="Sin puntos", on_submit=self.ingresar_socio)
         self.clave = campo("Clave", hint_text="Clave de personal", on_submit=self.ingresar_personal, autofocus=True, password=True, can_reveal_password=True)
-        self.error = ft.Text("", color="#8a1c1c", size=13, visible=False)
-        self.error_personal = ft.Text("", color="#8a1c1c", size=13, visible=False)
+        self.error = ft.Text("", color=ERROR[0], size=13, visible=False)
+        self.error_personal = ft.Text("", color=ERROR[0], size=13, visible=False)
         self.aplicacion: AplicacionBiblioteca | AplicacionSocio | None = None   # la que se abrió al ingresar
 
     def build(self) -> ft.Control:
@@ -44,10 +45,10 @@ class PantallaIngreso:
              ft.FilledButton(content="Consultar", icon=ft.Icons.SEARCH, on_click=self.ingresar_socio)])
         return ft.Container(
             content=ft.Column(controls=[
-                ft.Icon(ft.Icons.LOCAL_LIBRARY, color=AZUL, size=48),
-                ft.Text(NOMBRE_RED, size=26, weight=ft.FontWeight.BOLD, color=AZUL,
-                        text_align=ft.TextAlign.CENTER),
-                ft.Text("Sistema de préstamos interbibliotecarios", size=14, color=ft.Colors.ON_SURFACE_VARIANT),
+                ft.Icon(ft.Icons.LOCAL_LIBRARY, color=ACENTO, size=40),
+                encabezado(NOMBRE_RED, size=28, text_align=ft.TextAlign.CENTER),
+                ft.Text("Sistema de préstamos interbibliotecarios", size=16, color=TEXTO_SUAVE,
+                        font_family=FUENTE_SUBTITULO),
                 ft.Container(height=16),
                 ft.Row(controls=[personal, socios], spacing=24, alignment=ft.MainAxisAlignment.CENTER,
                        vertical_alignment=ft.CrossAxisAlignment.START),
@@ -60,15 +61,13 @@ class PantallaIngreso:
     def _tarjeta(icono, titulo: str, descripcion: str, controles: list[ft.Control]) -> ft.Control:
         return ft.Container(
             content=ft.Column(controls=[
-                ft.Row(controls=[ft.Icon(icono, color=AZUL, size=26),
-                                 ft.Text(titulo, size=18, weight=ft.FontWeight.BOLD, color=AZUL)]),
-                ft.Text(descripcion, size=13, color=ft.Colors.ON_SURFACE_VARIANT),
+                ft.Row(controls=[ft.Icon(icono, color=ACENTO, size=24), encabezado(titulo, size=18)]),
+                ft.Text(descripcion, size=13, color=TEXTO_SUAVE),
                 ft.Container(height=4),
                 *controles,
             ], spacing=12, horizontal_alignment=ft.CrossAxisAlignment.STRETCH),
-            width=340, padding=24, border_radius=12,
-            bgcolor=ft.Colors.with_opacity(0.04, AZUL),
-            border=ft.Border.all(1, ft.Colors.with_opacity(0.15, AZUL)),
+            width=340, padding=24, border_radius=4, bgcolor=SUPERFICIE,
+            border=ft.Border.all(1, LINEA),
         )
 
     # --- eventos ---------------------------------------------------------------

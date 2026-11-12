@@ -6,16 +6,16 @@ from typing import Callable
 import flet as ft
 
 from ..reportes.estructura import formatear
+from .estilo import (HOVER, ACENTO_CLARO, LINEA, SUPERFICIE, SUPERFICIE_ALTA, FUENTE_SUBTITULO, TEXTO, TEXTO_SUAVE,
+                     encabezado)
 
-AZUL = "#1f4e79"
-
-# Color de fondo de cada estado, para las "pastillas" de las tablas
+# Colores (fondo, letra) de las "pastillas" de estado
 COLORES_ESTADO = {
-    "verde": ("#dff0e1", "#1e5b2a"),
-    "azul": ("#dce9f5", "#1f4e79"),
-    "ambar": ("#fbeccf", "#7a4b00"),
-    "rojo": ("#f8dcdc", "#8a1c1c"),
-    "gris": ("#e6e8eb", "#3f4750"),
+    "verde": ("#E3F2EA", "#1F6B4A"),
+    "azul": ("#E1ECF5", "#24527A"),
+    "ambar": ("#FCF1DC", "#8A5A00"),
+    "rojo": ("#FBE9E9", "#9B2C2C"),
+    "gris": ("#EEF1F4", "#4A5560"),
 }
 ESTADOS = {
     "DISPONIBLE": "verde", "ACTIVO": "azul", "ACTIVA": "verde", "habilitado": "verde",
@@ -49,14 +49,15 @@ def pastilla(texto: str, color: str | None = None) -> ft.Control:
     fondo, letra = COLORES_ESTADO[clave]
     return ft.Container(
         content=ft.Text(etiqueta_estado(texto), size=12, color=letra, weight=ft.FontWeight.W_500),
-        bgcolor=fondo, border_radius=10, padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+        bgcolor=fondo, border_radius=3, padding=ft.Padding.symmetric(horizontal=8, vertical=2),
+        border=ft.Border.all(1, ft.Colors.with_opacity(0.25, letra)),
     )
 
 
 def titulo_pantalla(texto: str, subtitulo: str = "") -> ft.Control:
-    controles = [ft.Text(texto, size=24, weight=ft.FontWeight.BOLD, color=AZUL)]
+    controles: list[ft.Control] = [encabezado(texto, size=24)]
     if subtitulo:
-        controles.append(ft.Text(subtitulo, size=13, color=ft.Colors.ON_SURFACE_VARIANT))
+        controles.append(ft.Text(subtitulo, size=13, color=TEXTO_SUAVE, font_family=FUENTE_SUBTITULO))
     return ft.Column(controls=controles, spacing=2)
 
 
@@ -77,12 +78,17 @@ class Tabla:
         self.al_seleccionar = al_seleccionar
         self.seleccionado: int | None = None
         self.tabla = ft.DataTable(
-            columns=[ft.DataColumn(label=ft.Text(t, weight=ft.FontWeight.BOLD), numeric=n) for t, n in columnas],
-            rows=[], show_checkbox_column=False, column_spacing=22, heading_row_height=40,
+            # Encabezados en versalitas espaciadas, como los campos impresos de una ficha
+            columns=[ft.DataColumn(label=ft.Text(t.upper(), size=11, color=TEXTO_SUAVE, weight=ft.FontWeight.W_600,
+                                                 style=ft.TextStyle(letter_spacing=0.8)), numeric=n)
+                     for t, n in columnas],
+            rows=[], show_checkbox_column=False, column_spacing=22, heading_row_height=38,
             data_row_min_height=36, data_row_max_height=52,
-            heading_row_color=ft.Colors.with_opacity(0.06, AZUL),
+            heading_row_color=SUPERFICIE_ALTA, data_text_style=ft.TextStyle(color=TEXTO, size=14),
+            horizontal_lines=ft.BorderSide(1, LINEA),
+            data_row_color={ft.ControlState.SELECTED: ACENTO_CLARO, ft.ControlState.HOVERED: HOVER},
         )
-        self.vacia = ft.Text(vacia, italic=True, color=ft.Colors.ON_SURFACE_VARIANT, visible=False)
+        self.vacia = ft.Text(vacia, italic=True, color=TEXTO_SUAVE, font_family=FUENTE_SUBTITULO, visible=False)
 
     def cargar(self, filas: list[tuple[int, list]]) -> None:
         ids = [i for i, _ in filas]
@@ -109,8 +115,8 @@ class Tabla:
     def build(self, alto: int | None = None) -> ft.Control:
         contenido = ft.Column(controls=[ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO), self.vacia],
                               scroll=ft.ScrollMode.AUTO, spacing=8)
-        return ft.Container(content=contenido, height=alto, expand=alto is None,
-                            border=ft.Border.all(1, ft.Colors.OUTLINE_VARIANT), border_radius=8,
+        return ft.Container(content=contenido, height=alto, expand=alto is None, bgcolor=SUPERFICIE,
+                            border=ft.Border.all(1, LINEA), border_radius=4,
                             padding=ft.Padding.only(bottom=8))
 
 

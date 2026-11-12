@@ -4,6 +4,7 @@ import flet as ft
 
 from ...modelo import DIAS_PARA_RETIRAR, EstadoReserva
 from ..componentes import Tabla, boton, desplegable, id_seleccionado, opciones, pastilla, titulo_pantalla
+from ..estilo import ERROR
 
 
 class PantallaReservas:
@@ -72,7 +73,7 @@ class PantallaReservas:
         def al_elegir_libro(e=None):
             fila = libros.get(libro.value)
             if sede.value and not libros:
-                info.value, info.color = "La sede no tiene libros en su catálogo para reservar.", "#8a1c1c"
+                info.value, info.color = "La sede no tiene libros en su catálogo para reservar.", ERROR[0]
                 return
             info.color = ft.Colors.ON_SURFACE_VARIANT
             if fila is None:

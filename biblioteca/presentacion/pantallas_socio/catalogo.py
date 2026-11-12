@@ -3,7 +3,8 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo import DIAS_PARA_RETIRAR, EstadoReserva
-from ..componentes import AZUL, Tabla, boton, campo, desplegable, id_seleccionado, titulo_pantalla
+from ..componentes import Tabla, boton, campo, desplegable, id_seleccionado, titulo_pantalla
+from ..estilo import encabezado
 
 
 def _disponibles(cantidad: int) -> str:
@@ -22,7 +23,7 @@ class PantallaCatalogoSocio:
                                   vacia="No encontramos libros con esa búsqueda.")
         self.tabla_sedes = Tabla([("Sede", False), ("Ejemplares", True), ("Disponibles", True)],
                                  vacia="Seleccione un libro para ver en qué sedes está.")
-        self.titulo_detalle = ft.Text("", size=16, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.titulo_detalle = encabezado("", size=18)
         self.btn_reservar = boton("Reservar", ft.Icons.BOOKMARK_ADD, self.reservar, principal=True,
                                   deshabilitado=True)
 

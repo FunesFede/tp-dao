@@ -3,7 +3,8 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo.sancion import pesos
-from ..componentes import AZUL, Tabla, titulo_pantalla
+from ..componentes import Tabla, titulo_pantalla
+from ..estilo import ERROR, EXITO, LINEA, SUPERFICIE, encabezado
 
 
 def _tarjeta(titulo: str, controles: list[ft.Control]) -> ft.Control:
@@ -11,21 +12,20 @@ def _tarjeta(titulo: str, controles: list[ft.Control]) -> ft.Control:
         content=ft.Column(controls=[ft.Text(titulo, size=13, color=ft.Colors.ON_SURFACE_VARIANT), *controles],
                           spacing=6),
         width=360, padding=16, border_radius=10,
-        bgcolor=ft.Colors.with_opacity(0.05, AZUL),
-        border=ft.Border.all(1, ft.Colors.with_opacity(0.15, AZUL)),
+        bgcolor=SUPERFICIE, border=ft.Border.all(1, LINEA),
     )
 
 
 class PantallaSituacionSocio:
     def __init__(self, app):
         self.app = app
-        self.estado = ft.Text("", size=22, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.estado = encabezado("", size=26)
         self.motivo = ft.Text("", size=13)
-        self.prestamos = ft.Text("", size=22, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.prestamos = encabezado("", size=26)
         self.limite = ft.Text("", size=13)
-        self.aviso = ft.Container(padding=10, border_radius=6, bgcolor="#f8dcdc", visible=False,
+        self.aviso = ft.Container(padding=10, border_radius=6, bgcolor=ERROR[1], visible=False,
                                   content=ft.Text("No puede pedir préstamos ni hacer reservas hasta regularizar "
-                                                  "su situación. Consulte en cualquier sede.", color="#8a1c1c"))
+                                                  "su situación. Consulte en cualquier sede.", color=ERROR[0]))
         self.tabla = Tabla([("Fecha", False), ("Libro", False), ("Días de atraso", True), ("Monto", True)],
                            vacia="No tiene multas impagas.")
         self.total = ft.Text("", weight=ft.FontWeight.BOLD)
@@ -53,7 +53,7 @@ class PantallaSituacionSocio:
             self.estado.value, self.motivo.value = "Inhabilitado", f"Motivo: {motivo}."
         else:
             self.estado.value, self.motivo.value = "Habilitado", "Puede pedir préstamos y hacer reservas."
-        self.estado.color = "#8a1c1c" if bloqueado else "#1e5b2a"
+        self.estado.color = ERROR[0] if bloqueado else EXITO[0]
         self.aviso.visible = bloqueado
 
         abiertos, maximo = datos["prestamos_abiertos"], datos["max_prestamos"]

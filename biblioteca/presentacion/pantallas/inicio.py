@@ -3,7 +3,8 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo.sancion import pesos
-from ..componentes import AZUL, boton, titulo_pantalla
+from ..componentes import boton, titulo_pantalla
+from ..estilo import ACENTO, LINEA, SUPERFICIE, TEXTO_SUAVE, encabezado
 
 
 class PantallaInicio:
@@ -21,20 +22,19 @@ class PantallaInicio:
 
     def __init__(self, app):
         self.app = app
-        self.valores = {clave: ft.Text("-", size=28, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.valores = {clave: encabezado("-", size=32)
                         for clave, _, _ in self.INDICADORES}
 
     def build(self) -> ft.Control:
         tarjetas = [
             ft.Container(
                 content=ft.Column(controls=[
-                    ft.Row(controls=[ft.Icon(icono, color=AZUL, size=20),
-                                     ft.Text(nombre, size=13, color=ft.Colors.ON_SURFACE_VARIANT)]),
+                    ft.Row(controls=[ft.Icon(icono, color=ACENTO, size=20),
+                                     ft.Text(nombre, size=13, color=TEXTO_SUAVE)]),
                     self.valores[clave],
                 ], spacing=6),
-                width=230, padding=16, border_radius=10,
-                bgcolor=ft.Colors.with_opacity(0.05, AZUL),
-                border=ft.Border.all(1, ft.Colors.with_opacity(0.15, AZUL)),
+                width=230, padding=16, border_radius=4, bgcolor=SUPERFICIE,
+                border=ft.Border.all(1, LINEA),
             )
             for clave, nombre, icono in self.INDICADORES
         ]

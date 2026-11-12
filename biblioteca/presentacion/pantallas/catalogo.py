@@ -3,8 +3,9 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo import EstadoFisico, TipoMaterial
-from ..componentes import (en_fila, AZUL, Tabla, boton, campo, desplegable, entero_o_none, id_seleccionado, pastilla,
+from ..componentes import (en_fila, Tabla, boton, campo, desplegable, entero_o_none, id_seleccionado, pastilla,
                            texto_o_none, titulo_pantalla)
+from ..estilo import encabezado
 
 
 class PantallaCatalogo:
@@ -24,7 +25,7 @@ class PantallaCatalogo:
         self.tabla_ejemplares = Tabla([("Código", False), ("Sede", False), ("Ubicación actual", False),
                                        ("Estado", False), ("Estado físico", False)], self.al_seleccionar_ejemplar,
                                       vacia="Seleccione un libro.")
-        self.titulo_detalle = ft.Text("", size=16, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.titulo_detalle = encabezado("", size=18)
         self.btn_editar = boton("Editar libro", ft.Icons.EDIT, self.editar_libro, deshabilitado=True)
         self.btn_ejemplar = boton("Agregar ejemplar", ft.Icons.ADD_BOX, self.agregar_ejemplar, deshabilitado=True)
         self.btn_baja = boton("Dar de baja", ft.Icons.DELETE_OUTLINE, self.dar_de_baja, deshabilitado=True)

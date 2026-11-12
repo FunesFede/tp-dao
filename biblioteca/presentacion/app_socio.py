@@ -13,7 +13,8 @@ from .. import NOMBRE_RED
 from ..modelo import Socio
 from ..servicios import Servicios
 from .app_base import AplicacionBase
-from .componentes import AZUL, pastilla
+from .componentes import pastilla
+from .estilo import ACENTO, LINEA, MENU_TEXTO, MENU_TEXTO_SUAVE, encabezado
 from .pantallas_socio.catalogo import PantallaCatalogoSocio
 from .pantallas_socio.prestamos import PantallaPrestamosSocio
 from .pantallas_socio.reservas import PantallaReservasSocio
@@ -49,21 +50,13 @@ class AplicacionSocio(AplicacionBase):
 
     def build(self) -> ft.Control:
         situacion = self.consulta.situacion(self.socio.id)["situacion"]
-        navegacion = ft.NavigationRail(
-            selected_index=0, extended=True, min_extended_width=200,
-            leading=ft.Container(
-                content=ft.Column(controls=[
-                    ft.Icon(ft.Icons.ACCOUNT_CIRCLE, color=AZUL, size=40),
-                    ft.Text(f"{self.socio.nombre} {self.socio.apellido}", weight=ft.FontWeight.BOLD,
-                            color=AZUL, width=180, text_align=ft.TextAlign.CENTER),
-                    ft.Text(f"DNI {self.socio.dni}", size=11, color=ft.Colors.ON_SURFACE_VARIANT),
-                    pastilla_situacion(situacion),
-                    ft.Text(NOMBRE_RED, size=10, color=ft.Colors.ON_SURFACE_VARIANT, width=180,
-                            text_align=ft.TextAlign.CENTER),
-                ], spacing=4, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
-                padding=ft.Padding.only(top=16, bottom=12)),
-            destinations=[ft.NavigationRailDestination(icon=icono, selected_icon=icono_sel, label=nombre)
-                          for nombre, icono, icono_sel, _ in SECCIONES_SOCIO],
-            on_change=self.cambiar_seccion,
-        )
+        navegacion = self.crear_navegacion([
+            ft.Icon(ft.Icons.ACCOUNT_CIRCLE, color=ACENTO, size=38),
+            encabezado(f"{self.socio.nombre} {self.socio.apellido}", size=15, color=MENU_TEXTO, width=190,
+                       text_align=ft.TextAlign.CENTER),
+            ft.Text(f"DNI {self.socio.dni}", size=12, color=MENU_TEXTO_SUAVE),
+            pastilla_situacion(situacion),
+            ft.Container(width=32, height=1, bgcolor=LINEA, margin=ft.Margin.symmetric(vertical=6)),
+            ft.Text(NOMBRE_RED, size=11, color=MENU_TEXTO_SUAVE, width=190, text_align=ft.TextAlign.CENTER),
+        ], SECCIONES_SOCIO)
         return self.armar(navegacion, self.al_salir)

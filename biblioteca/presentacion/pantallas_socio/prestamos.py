@@ -4,6 +4,7 @@ import flet as ft
 
 from ...modelo import EstadoPrestamo, TipoPrestamo
 from ..componentes import Tabla, desplegable, pastilla, titulo_pantalla
+from ..estilo import EXITO
 
 VISTAS = {"abiertos": "Abiertos", "historial": "Historial"}
 
@@ -36,6 +37,6 @@ class PantallaPrestamosSocio:
             for f in filas])
         self.avisos.controls = [
             ft.Container(content=ft.Text(f"«{f['titulo']}» ya llegó. Puede retirarlo en «{f['sede_destino']}».",
-                                         color="#1e5b2a"),
-                         bgcolor="#dff0e1", padding=10, border_radius=6)
+                                         color=EXITO[0]),
+                         bgcolor=EXITO[1], padding=10, border_radius=3)
             for f in filas if f["estado"] == EstadoPrestamo.LISTO_PARA_RETIRO]

@@ -9,7 +9,8 @@ from ...reportes.estructura import Reporte, formatear
 from ...reportes.exportador_csv import exportar_csv
 from ...reportes.exportador_pdf import exportar_pdf
 from ...reportes.graficos import grafico_png
-from ..componentes import AZUL, Tabla, boton, titulo_pantalla
+from ..componentes import Tabla, boton, titulo_pantalla
+from ..estilo import ACENTO, ACENTO_CLARO, encabezado
 
 CARPETA_EXPORTES = RAIZ_PROYECTO / "exportes"
 
@@ -20,7 +21,7 @@ class PantallaReportes:
         self.reporte: Reporte | None = None
         self.clave = "prestamos_activos"
         self.lista = ft.Column(spacing=2)
-        self.titulo = ft.Text("", size=18, weight=ft.FontWeight.BOLD, color=AZUL)
+        self.titulo = encabezado("", size=20)
         self.descripcion = ft.Text("", size=13, color=ft.Colors.ON_SURFACE_VARIANT)
         self.grafico = ft.Container()
         self.contenedor_tabla = ft.Column()
@@ -45,7 +46,7 @@ class PantallaReportes:
     def refrescar(self) -> None:
         self.lista.controls = [
             ft.ListTile(title=ft.Text(nombre, size=14), selected=clave == self.clave, dense=True,
-                        selected_tile_color=ft.Colors.with_opacity(0.1, AZUL), selected_color=AZUL,
+                        selected_tile_color=ACENTO_CLARO, selected_color=ACENTO,
                         on_click=lambda e, c=clave: self.seleccionar(c))
             for clave, nombre in self.app.servicios.reportes.CATALOGO.items()
         ]

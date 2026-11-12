@@ -6,6 +6,7 @@ from ...modelo import DIAS_PLAZO, EstadoFisico, EstadoPrestamo, TipoPrestamo
 from ...reportes.estructura import formatear
 from ..componentes import (en_fila, Tabla, boton, campo, desplegable, id_seleccionado, opciones, pastilla, texto_o_none,
                            titulo_pantalla)
+from ..estilo import AVISO, ERROR, EXITO
 
 FILTROS = {
     "abiertos": ("Abiertos", EstadoPrestamo.ABIERTOS),
@@ -108,7 +109,7 @@ class PantallaPrestamos:
 
             if libro.value and origen.disabled:
                 info.value = "No hay ejemplares disponibles de este libro en ninguna sede."
-                info.color = "#8a1c1c"
+                info.color = ERROR[0]
             elif origen.value and destino.value:
                 info.color = ft.Colors.ON_SURFACE_VARIANT
                 info.value = (f"Préstamo local: el socio se lo lleva ahora, vence en {DIAS_PLAZO['LOCAL']} días."
@@ -163,10 +164,10 @@ class PantallaPrestamos:
         observaciones = campo("Observaciones", multiline=True, min_lines=2)
         sancion = self.app.servicios.prestamos.sancion_prevista(fila["id"])
         if sancion:
-            aviso = ft.Container(content=ft.Text(f"Devolución con atraso. Corresponde: {sancion}.", color="#7a4b00"),
-                                 bgcolor="#fbeccf", padding=10, border_radius=6)
+            aviso = ft.Container(content=ft.Text(f"Devolución con atraso. Corresponde: {sancion}.", color=AVISO[0]),
+                                 bgcolor=AVISO[1], padding=10, border_radius=3)
         else:
-            aviso = ft.Text("Devolución en término: no corresponde sanción.", color="#1e5b2a")
+            aviso = ft.Text("Devolución en término: no corresponde sanción.", color=EXITO[0])
 
         def guardar():
             resultado = self.app.servicios.prestamos.registrar_devolucion(

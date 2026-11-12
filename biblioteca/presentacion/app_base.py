@@ -8,6 +8,7 @@ import flet as ft
 from ..modelo import ErrorNegocio
 from ..servicios import Servicios
 from .componentes import en_fila
+from .estilo import ACENTO, ERROR, EXITO, LINEA, MENU, MENU_INDICADOR, MENU_TEXTO_SUAVE
 
 
 class AplicacionBase:
@@ -19,19 +20,35 @@ class AplicacionBase:
         self.pantallas: list = []
         self.contenido = ft.Container(expand=True, padding=ft.Padding.symmetric(horizontal=28, vertical=20))
 
+    def crear_navegacion(self, cabecera: list[ft.Control], secciones: list[tuple]) -> ft.NavigationRail:
+        """Menú lateral verde. `secciones`: (nombre, ícono, ícono seleccionado, clase de pantalla)."""
+        return ft.NavigationRail(
+            selected_index=0, extended=True, min_extended_width=214, bgcolor=MENU,
+            indicator_color=MENU_INDICADOR, indicator_shape=ft.RoundedRectangleBorder(radius=3),
+            selected_label_text_style=ft.TextStyle(color=ACENTO, size=14, weight=ft.FontWeight.W_600),
+            unselected_label_text_style=ft.TextStyle(color=MENU_TEXTO_SUAVE, size=14),
+            leading=ft.Container(
+                content=ft.Column(controls=cabecera, spacing=4, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                padding=ft.Padding.only(top=22, bottom=18, left=8, right=8)),
+            destinations=[ft.NavigationRailDestination(icon=ft.Icon(icono, color=MENU_TEXTO_SUAVE),
+                                                       selected_icon=ft.Icon(icono_sel, color=ACENTO), label=nombre)
+                          for nombre, icono, icono_sel, _ in secciones],
+            on_change=self.cambiar_seccion,
+        )
+
     def armar(self, navegacion: ft.NavigationRail, al_salir: Callable[[], None] | None) -> ft.Control:
         """Navegación a la izquierda (con "Salir" al pie si corresponde) y contenido a la derecha."""
         self.mostrar(0)
-        lateral: ft.Control = navegacion
+        navegacion.expand = True
+        controles: list[ft.Control] = [navegacion]
         if al_salir is not None:
-            navegacion.expand = True
-            lateral = ft.Column(controls=[
-                navegacion,
-                ft.Container(content=ft.TextButton(content="Salir", icon=ft.Icons.LOGOUT,
-                                                   on_click=lambda e: al_salir()),
-                             padding=ft.Padding.only(left=12, bottom=12)),
-            ], spacing=0)
-        return ft.Row(controls=[lateral, ft.VerticalDivider(width=1), self.contenido], expand=True, spacing=0)
+            controles.append(ft.Container(
+                content=ft.TextButton(content="Salir", icon=ft.Icons.LOGOUT, on_click=lambda e: al_salir(),
+                                      style=ft.ButtonStyle(color=MENU_TEXTO_SUAVE, icon_color=MENU_TEXTO_SUAVE)),
+                padding=ft.Padding.only(left=14, bottom=14)))
+        lateral = ft.Container(content=ft.Column(controls=controles, spacing=0), bgcolor=MENU,
+                               border=ft.Border(right=ft.BorderSide(1, LINEA)))
+        return ft.Row(controls=[lateral, self.contenido], expand=True, spacing=0)
 
     def cambiar_seccion(self, e) -> None:
         self.mostrar(e.control.selected_index)
@@ -45,7 +62,7 @@ class AplicacionBase:
     def notificar(self, mensaje: str, error: bool = False) -> None:
         self.page.show_dialog(ft.SnackBar(
             content=ft.Text(mensaje, color=ft.Colors.WHITE),
-            bgcolor="#8a1c1c" if error else "#1e5b2a", duration=6000 if error else 4500))
+            bgcolor=ERROR[0] if error else EXITO[0], duration=6000 if error else 4500))
 
     def ejecutar(self, accion: Callable, *args, exito: str | None = None) -> bool:
         """Ejecuta una llamada a un servicio y muestra el error de negocio si lo hay."""
@@ -157,7 +174,7 @@ class AplicacionBase:
             border_radius=8, padding=ft.Padding.symmetric(horizontal=12, vertical=8), visible=False)
 
         def avisar(mensaje: str, error: bool = False) -> None:
-            color, fondo = ("#8a1c1c", "#f8dcdc") if error else ("#1e5b2a", "#dff0e1")
+            color, fondo = ERROR if error else EXITO
             texto.value, texto.color, icono.color, caja.bgcolor = mensaje, color, color, fondo
             icono.icon = ft.Icons.ERROR_OUTLINE if error else ft.Icons.CHECK_CIRCLE_OUTLINE
             caja.visible = True

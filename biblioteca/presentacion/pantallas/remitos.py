@@ -4,7 +4,8 @@ import flet as ft
 
 from ...modelo import ResultadoRecepcion
 from ...reportes.estructura import formatear
-from ..componentes import AZUL, Tabla, boton, campo, desplegable, pastilla, titulo_pantalla
+from ..componentes import Tabla, boton, campo, desplegable, pastilla, titulo_pantalla
+from ..estilo import ACENTO, encabezado
 
 ACCIONES_POR_ESTADO = {
     "EN_PREPARACION": {"despachar", "anular"},
@@ -24,8 +25,7 @@ class PantallaRemitos:
         self.tabla_ejemplares = Tabla([("Código", False), ("Libro", False), ("Motivo", False),
                                        ("Recepción", False)], vacia="Sin ejemplares para mostrar")
         self.historial = ft.Column(spacing=0)
-        self.cabecera = ft.Text("Seleccione un remito para ver su detalle", size=16, weight=ft.FontWeight.BOLD,
-                                color=AZUL)
+        self.cabecera = encabezado("Seleccione un remito para ver su detalle", size=18)
         self.transito = ft.Text("", size=13, color=ft.Colors.ON_SURFACE_VARIANT)
         self.botones = {
             "despachar": boton("Despachar", ft.Icons.OUTBOX, self.despachar, principal=True),
@@ -94,7 +94,7 @@ class PantallaRemitos:
     def _hito(m: dict, ultimo: bool) -> ft.Control:
         return ft.Row(controls=[
             ft.Column(controls=[
-                ft.Container(width=12, height=12, border_radius=6, bgcolor=AZUL),
+                ft.Container(width=12, height=12, border_radius=6, bgcolor=ACENTO),
                 ft.Container(width=2, height=34, bgcolor=ft.Colors.OUTLINE_VARIANT, visible=not ultimo),
             ], spacing=0, horizontal_alignment=ft.CrossAxisAlignment.CENTER),
             ft.Column(controls=[

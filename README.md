@@ -44,6 +44,7 @@ Sin el seed, `main.py` crea una base vacía. Los reportes exportados se guardan 
 
 ```txt
 main.py                     ft.run(main)
+assets/fonts/               IBM Plex Sans (licencia OFL), usada por la interfaz sin necesidad de conexión
 biblioteca/
 ├── modelo/                 Entidades y patrones. Python puro.
 │   ├── remito.py           State (ciclo de vida) + Observer (sujeto)

@@ -5,6 +5,8 @@ disparan los eventos y confirman, igual que lo haría el usuario.
 """
 import flet as ft
 
+from biblioteca.presentacion.estilo import ERROR
+
 
 class PaginaFalsa:
     def __init__(self):
@@ -65,7 +67,7 @@ class PaginaFalsa:
         return self.mensajes[-1][0]
 
     def hubo_error(self):
-        return self.mensajes and self.mensajes[-1][1] == "#8a1c1c"
+        return self.mensajes and self.mensajes[-1][1] == ERROR[0]
 
     def error_en_dialogo(self):
         """Error mostrado dentro del formulario abierto ("" si no hay)."""
