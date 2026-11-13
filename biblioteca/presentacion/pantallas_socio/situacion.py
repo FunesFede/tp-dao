@@ -3,7 +3,7 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo.sancion import pesos
-from ..componentes import Tabla, titulo_pantalla
+from ..componentes import Tabla, mayuscula_inicial, titulo_pantalla
 from ..estilo import ERROR, EXITO, LINEA, SUPERFICIE, encabezado
 
 
@@ -49,7 +49,7 @@ class PantallaSituacionSocio:
         if situacion.startswith("suspendido"):
             self.estado.value, self.motivo.value = "Suspendido", f"Está {situacion}."
         elif situacion.startswith("inhabilitado"):
-            motivo = situacion.split(":", 1)[1].strip()
+            motivo = mayuscula_inicial(situacion.split(":", 1)[1].strip())
             self.estado.value, self.motivo.value = "Inhabilitado", f"Motivo: {motivo}."
         else:
             self.estado.value, self.motivo.value = "Habilitado", "Puede pedir préstamos y hacer reservas."

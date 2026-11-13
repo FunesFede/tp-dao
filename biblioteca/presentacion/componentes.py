@@ -34,12 +34,17 @@ _ACENTOS = {"transito": "tránsito", "preparacion": "preparación", "daniado": "
 _ETIQUETAS = {"RESERVADO": "Apartado"}   # apartado para un préstamo o una reserva
 
 
+def mayuscula_inicial(texto: str) -> str:
+    """Primera letra en mayúscula sin tocar el resto (capitalize() pasaría a minúscula fechas o nombres)."""
+    return texto[:1].upper() + texto[1:]
+
+
 def etiqueta_estado(texto: str) -> str:
-    """EN_TRANSITO -> En tránsito"""
+    """EN_TRANSITO -> En tránsito; "suspendido hasta el ..." -> "Suspendido hasta el ..." """
     if texto in _ETIQUETAS:
         return _ETIQUETAS[texto]
     if not texto.isupper():
-        return texto
+        return mayuscula_inicial(texto)
     palabras = [_ACENTOS.get(p, p) for p in texto.lower().split("_")]
     return " ".join(palabras).capitalize()
 
