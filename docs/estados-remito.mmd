@@ -1,0 +1,16 @@
+flowchart LR
+    inicio(( )) -->|empaquetar| P(EN_PREPARACION)
+    P -->|"agregar o quitar<br>ejemplar"| P
+    P -->|despachar| D
+    subgraph C [EnCamino]
+        direction LR
+        D(DESPACHADO) -->|registrar tránsito| T(EN_TRANSITO)
+        T -->|registrar tránsito| T
+    end
+    C --- J(( ))
+    J -->|recibir sin incidencias| R(RECIBIDO)
+    J -->|recibir con incidencias| RI(RECIBIDO_CON_INCIDENCIA)
+    J -->|declarar extravío| X(EXTRAVIADO)
+    P ---->|anular| A(ANULADO)
+    style inicio fill:#333,stroke:#333
+    style J fill:#333,stroke:#333

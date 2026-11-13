@@ -1,0 +1,137 @@
+erDiagram
+    SEDE ||--o{ SOCIO : "da de alta"
+    SEDE ||--o{ EJEMPLAR : "es propietaria"
+    SEDE ||--o{ EJEMPLAR : "aloja actualmente"
+    LIBRO ||--o{ EJEMPLAR : "tiene copias"
+
+    SOCIO ||--o{ PRESTAMO : solicita
+    EJEMPLAR ||--o{ PRESTAMO : "se presta en"
+    SEDE ||--o{ PRESTAMO : "origen"
+    SEDE ||--o{ PRESTAMO : "destino"
+
+    SOCIO ||--o{ RESERVA : realiza
+    LIBRO ||--o{ RESERVA : "es reservado"
+    SEDE ||--o{ RESERVA : "sede de retiro"
+    EJEMPLAR |o--o{ RESERVA : "asignado a"
+
+    SEDE ||--o{ REMITO : "envía"
+    SEDE ||--o{ REMITO : "recibe"
+    REMITO ||--|{ REMITO_DETALLE : contiene
+    EJEMPLAR ||--o{ REMITO_DETALLE : "viaja en"
+    PRESTAMO |o--o{ REMITO_DETALLE : "motiva"
+    REMITO ||--|{ REMITO_MOVIMIENTO : "registra"
+
+    PRESTAMO ||--o| DEVOLUCION : "se cierra con"
+    PRESTAMO ||--o{ SANCION : genera
+    SOCIO ||--o{ SANCION : recibe
+
+    SEDE {
+        int id PK
+        string nombre UK
+        string direccion
+        string telefono
+        string email
+        string horario
+        bool activa
+        date fecha_baja
+        string politica_sancion "MONETARIA | SUSPENSION"
+        float monto_por_dia "solo MONETARIA"
+        int factor_suspension "solo SUSPENSION"
+    }
+    SOCIO {
+        int id PK
+        string dni UK
+        string nombre
+        string apellido
+        string email UK
+        string telefono
+        int sede_id FK
+        date suspendido_hasta "lo fija una SANCION de suspensión"
+        bool inhabilitado_manual
+        string motivo_inhabilitacion
+        date fecha_alta
+    }
+    LIBRO {
+        int id PK
+        string isbn UK
+        string titulo
+        string autor
+        string editorial
+        int anio
+        string tipo_material
+    }
+    EJEMPLAR {
+        int id PK
+        int libro_id FK
+        int sede_id FK "propietaria"
+        int sede_actual_id FK
+        string codigo_inventario UK
+        string estado
+        string estado_fisico
+    }
+    PRESTAMO {
+        int id PK
+        int socio_id FK
+        int ejemplar_id FK
+        string tipo "LOCAL | INTER"
+        int sede_origen_id FK
+        int sede_destino_id FK
+        datetime fecha_solicitud
+        datetime fecha_inicio
+        date fecha_vencimiento
+        datetime fecha_devolucion
+        string estado
+    }
+    RESERVA {
+        int id PK
+        int socio_id FK
+        int libro_id FK
+        int sede_retiro_id FK
+        int ejemplar_asignado_id FK
+        datetime fecha_reserva
+        date fecha_expiracion
+        string estado
+    }
+    REMITO {
+        int id PK
+        string numero UK
+        int sede_origen_id FK
+        int sede_destino_id FK
+        string estado
+        datetime fecha_creacion
+    }
+    REMITO_DETALLE {
+        int remito_id PK, FK
+        int ejemplar_id PK, FK
+        int prestamo_id FK
+        string estado_recepcion
+    }
+    REMITO_MOVIMIENTO {
+        int id PK
+        int remito_id FK
+        string estado_anterior
+        string estado_nuevo
+        datetime fecha_hora
+        int sede_id FK
+        string observacion
+    }
+    DEVOLUCION {
+        int id PK
+        int prestamo_id FK, UK
+        datetime fecha
+        int sede_recepcion_id FK
+        string estado_fisico
+        string observaciones
+    }
+    SANCION {
+        int id PK
+        int prestamo_id FK
+        int socio_id FK
+        string tipo "MONETARIA | SUSPENSION"
+        string motivo "ATRASO"
+        int dias_atraso
+        float monto "solo MONETARIA"
+        bool pagada "solo MONETARIA"
+        date suspendido_hasta "solo SUSPENSION"
+        datetime fecha
+    }
