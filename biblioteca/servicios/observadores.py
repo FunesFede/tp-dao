@@ -6,7 +6,7 @@ estado del remito sin que el remito sepa qué hacen:
 - ActualizadorEjemplares: estado y ubicación de cada ejemplar que viaja.
 - ActualizadorPrestamos: estado de los préstamos interbibliotecarios que motivaron el envío.
 
-Se suscriben en ese orden: los préstamos se actualizan cuando los ejemplares ya llegaron.
+Son independientes: cada uno modifica solo sus propias entidades, así que el orden de suscripción no importa.
 """
 from __future__ import annotations
 

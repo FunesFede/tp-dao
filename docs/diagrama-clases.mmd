@@ -152,9 +152,6 @@ classDiagram
     }
     class Despachado
     class EnTransito
-    class EstadoFinal {
-        <<abstract>>
-    }
     class Recibido
     class RecibidoConIncidencia
     class Extraviado
@@ -229,13 +226,12 @@ classDiagram
 
     EstadoRemito <|-- EnPreparacion
     EstadoRemito <|-- EnCamino
-    EstadoRemito <|-- EstadoFinal
     EnCamino <|-- Despachado
     EnCamino <|-- EnTransito
-    EstadoFinal <|-- Recibido
-    EstadoFinal <|-- RecibidoConIncidencia
-    EstadoFinal <|-- Extraviado
-    EstadoFinal <|-- Anulado
+    EstadoRemito <|-- Recibido
+    EstadoRemito <|-- RecibidoConIncidencia
+    EstadoRemito <|-- Extraviado
+    EstadoRemito <|-- Anulado
 
     Remito "1" o-- "*" ObservadorRemito : notifica
     ObservadorRemito <|-- ActualizadorEjemplares

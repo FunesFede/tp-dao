@@ -141,23 +141,20 @@ class EnTransito(EnCamino):
     codigo = "EN_TRANSITO"
 
 
-class EstadoFinal(EstadoRemito):
-    """Estados sin transiciones: toda operación se rechaza."""
-
-
-class Recibido(EstadoFinal):
+# Estados finales: no redefinen ninguna operación, así que EstadoRemito las rechaza todas
+class Recibido(EstadoRemito):
     codigo = "RECIBIDO"
 
 
-class RecibidoConIncidencia(EstadoFinal):
+class RecibidoConIncidencia(EstadoRemito):
     codigo = "RECIBIDO_CON_INCIDENCIA"
 
 
-class Extraviado(EstadoFinal):
+class Extraviado(EstadoRemito):
     codigo = "EXTRAVIADO"
 
 
-class Anulado(EstadoFinal):
+class Anulado(EstadoRemito):
     codigo = "ANULADO"
 
 
