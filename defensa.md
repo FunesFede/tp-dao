@@ -229,6 +229,21 @@ Completan la interfaz clásica de cada patrón (`setStrategy` y `detach`). Son d
 
 Una clase DAO por entidad principal (`SedeDAO`, `SocioDAO`, `RemitoDAO`, etc.). Son las únicas que escriben SQL, siempre con parámetros `?`, y devuelven objetos del modelo. Dos diferencias con el ejemplo de la cátedra: reciben la conexión en el constructor en lugar de abrirla en cada método (ver Transacciones), y `RemitoDAO` guarda el remito completo (cabecera, detalle y movimientos nuevos) porque es un agregado.
 
+### ¿Es lo mismo un DAO que un repositorio?
+
+En la práctica cumplen el mismo papel, pero son dos patrones distintos:
+
+| | DAO | Repositorio |
+| --- | --- | --- |
+| Origen | J2EE: aislar la tecnología de acceso a datos | Fowler y Evans (diseño guiado por el dominio) |
+| Se organiza por | Tabla o fuente de datos | Entidad o agregado del dominio |
+| Habla en términos de | Persistencia: insertar, actualizar, consultar filas | Una colección de objetos: obtener, agregar, buscar |
+| Devuelve | Lo que convenga, incluso filas o diccionarios | Siempre objetos del dominio |
+
+Los de este TP son un híbrido. Tienen de repositorio que devuelven entidades del modelo (`SocioDAO.obtener_por_id` devuelve un `Socio`), que `RemitoDAO` guarda y reconstruye el remito entero como agregado, y que el modelo no sabe nada de SQL. Tienen de DAO que hay uno por tabla principal, que los listados (`listar_resumen`) devuelven diccionarios con columnas de varias tablas, y que hay consultas pensadas para una pantalla o una regla concreta (`contar_pendientes`, `libros_de_sede`). Por eso la clase que los agrupa por transacción se llama `Repositorios`.
+
+Para decir: son DAO, como los llama la cátedra, pero cumplen el rol de repositorio, porque separan el dominio de la base y devuelven objetos del modelo. No son repositorios puros porque los listados devuelven filas armadas para la interfaz, que es más simple que mapear todo a objetos.
+
 ### ¿Por qué no usaron Factory o Singleton?
 
 Con State y Strategy están los dos obligatorios, y Observer suma uno más donde resuelve un problema real. Factory para préstamos local e interbibliotecario era posible, pero la diferencia entre los dos es chica (plazo, estado inicial, si requiere envío) y está resuelta en `Prestamo` con el campo `tipo`. Singleton no se usó para la conexión porque una conexión compartida rompería el manejo de transacciones por servicio.
