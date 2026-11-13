@@ -35,6 +35,22 @@ def empaquetar(r: Repositorios, ejemplar: Ejemplar, prestamo_id: int | None,
     return remito
 
 
+def quitar_de_remito_en_preparacion(r: Repositorios, ejemplar_id: int, motivo: str, reloj: Reloj) -> str | None:
+    """Saca el ejemplar del remito en preparación en que espera; si el remito queda vacío, lo anula.
+
+    Devuelve el número del remito, o None si el ejemplar no esperaba en ninguno.
+    """
+    remito = r.remitos.obtener_en_curso_por_ejemplar(ejemplar_id)
+    if remito is None:
+        return None
+    remito.quitar_ejemplar(ejemplar_id)   # solo se puede si el remito sigue en preparación
+    if not remito.ejemplares:   # sin ejemplares el remito no tiene sentido: se anula
+        remito.reloj = reloj.ahora
+        remito.anular(remito.sede_origen_id, motivo)
+    r.remitos.guardar(remito)
+    return remito.numero
+
+
 def asignar_reservas(r: Repositorios, libro_id: int, sede_id: int, hoy: date) -> int:
     """Asigna ejemplares disponibles de la sede a las reservas pendientes, por orden de llegada."""
     asignadas = 0

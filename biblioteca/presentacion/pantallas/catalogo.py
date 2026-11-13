@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import flet as ft
 
-from ...modelo import EstadoFisico, TipoMaterial
-from ..componentes import (en_fila, Tabla, boton, campo, desplegable, entero_o_none, id_seleccionado, pastilla,
-                           texto_o_none, titulo_pantalla)
+from ...modelo import EstadoEjemplar, EstadoFisico, TipoMaterial
+from ..componentes import (en_fila, Tabla, boton, campo, desplegable, entero_o_none, etiqueta_estado,
+                           id_seleccionado, pastilla, texto_o_none, titulo_pantalla)
 from ..estilo import encabezado
 
 
@@ -84,15 +84,15 @@ class PantallaCatalogo:
                 (e["id"], [e["codigo_inventario"], e["sede"],
                            e["sede_actual"] if e["sede_actual_id"] != e["sede_id"] else "En su sede",
                            self._estado_ejemplar(e),
-                           pastilla(e["estado_fisico"], "verde" if e["estado_fisico"] == "BUENO" else None)])
+                           pastilla(e["estado_fisico"], "verde" if e["estado_fisico"] == EstadoFisico.BUENO else None)])
                 for e in ejemplares])
         self.al_seleccionar_ejemplar(self.tabla_ejemplares.seleccionado)
 
     @staticmethod
     def _estado_ejemplar(e: dict) -> ft.Control:
-        if e["estado"] == "DISPONIBLE" and not e["sede_activa"]:
+        if e["estado"] == EstadoEjemplar.DISPONIBLE and not e["sede_activa"]:
             return pastilla("SEDE_DE_BAJA")
-        if e["estado"] == "RESERVADO":
+        if e["estado"] == EstadoEjemplar.RESERVADO:
             motivo = (f" · préstamo #{e['apartado_prestamo_id']}" if e["apartado_prestamo_id"] else
                       f" · reserva de {e['apartado_reserva_de']}" if e["apartado_reserva_de"] else "")
             return pastilla(f"Apartado{motivo}", "ambar")
@@ -100,10 +100,10 @@ class PantallaCatalogo:
 
     def al_seleccionar_ejemplar(self, ejemplar_id: int | None) -> None:
         e = self.ejemplares.get(ejemplar_id)
-        self.btn_baja.disabled = e is None or e["estado"] != "DISPONIBLE"
-        self.btn_reparar.disabled = (e is None or e["estado"] != "DISPONIBLE"
-                                     or not EstadoFisico.mejores_que(e["estado_fisico"]))
-        self.btn_retorno.disabled = e is None or e["estado"] != "DISPONIBLE" or e["sede_actual_id"] == e["sede_id"]
+        disponible = e is not None and e["estado"] == EstadoEjemplar.DISPONIBLE
+        self.btn_baja.disabled = not disponible
+        self.btn_reparar.disabled = not disponible or not EstadoFisico.mejores_que(e["estado_fisico"])
+        self.btn_retorno.disabled = not disponible or e["sede_actual_id"] == e["sede_id"]
 
     # --- acciones ------------------------------------------------------------
     def nuevo_libro(self, e) -> None:
@@ -152,8 +152,7 @@ class PantallaCatalogo:
         ejemplar = self.ejemplares[self.tabla_ejemplares.seleccionado]
 
         def baja():
-            self.app.servicios.catalogo.dar_de_baja_ejemplar(ejemplar["id"])
-            return f"Ejemplar {ejemplar['codigo_inventario']} dado de baja"
+            return self.app.servicios.catalogo.dar_de_baja_ejemplar(ejemplar["id"])
 
         self.app.confirmar("Dar de baja el ejemplar",
                            f"El ejemplar {ejemplar['codigo_inventario']} dejará de estar disponible para préstamos.",
@@ -162,14 +161,14 @@ class PantallaCatalogo:
     def reparar(self, e) -> None:
         ejemplar = self.ejemplares[self.tabla_ejemplares.seleccionado]
         estado = desplegable("Nuevo estado físico",
-                             [(x, x.capitalize().replace("Daniado", "Dañado"))
+                             [(x, etiqueta_estado(x))
                               for x in EstadoFisico.mejores_que(ejemplar["estado_fisico"])], EstadoFisico.BUENO)
 
         def guardar():
             self.app.servicios.catalogo.reparar_ejemplar(ejemplar["id"], estado.value)
             return f"Ejemplar {ejemplar['codigo_inventario']} reparado"
 
-        actual = ejemplar["estado_fisico"].capitalize().replace("Daniado", "Dañado")
+        actual = etiqueta_estado(ejemplar["estado_fisico"])
         self.app.dialogo(f"Reparación de {ejemplar['codigo_inventario']}",
                          [ft.Text(f"Estado actual: {actual}. Elija cómo quedó el ejemplar después de repararlo."),
                           estado], guardar, texto_aceptar="Registrar reparación", ancho=440,

@@ -31,7 +31,8 @@ ESTADOS = {
 
 _ACENTOS = {"transito": "tránsito", "preparacion": "preparación", "daniado": "dañado"}
 # Estados cuyo nombre en pantalla difiere del código guardado en la base
-_ETIQUETAS = {"RESERVADO": "Apartado"}   # apartado para un préstamo o una reserva
+_ETIQUETAS = {"RESERVADO": "Apartado",   # apartado para un préstamo o una reserva
+              "OK": "Correcto"}           # resultado de recepción
 
 
 def mayuscula_inicial(texto: str) -> str:

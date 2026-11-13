@@ -112,11 +112,3 @@ class DevolucionDAO:
             WHERE d.prestamo_id = ?
         """, (prestamo_id,)).fetchone()
         return dict(f) if f else None
-
-    def obtener_por_prestamo(self, prestamo_id: int) -> Devolucion | None:
-        f = self.cx.execute("SELECT * FROM devolucion WHERE prestamo_id = ?", (prestamo_id,)).fetchone()
-        if not f:
-            return None
-        return Devolucion(prestamo_id=f["prestamo_id"], fecha=texto_a_fecha_hora(f["fecha"]),
-                          sede_recepcion_id=f["sede_recepcion_id"], estado_fisico=f["estado_fisico"],
-                          observaciones=f["observaciones"], id=f["id"])

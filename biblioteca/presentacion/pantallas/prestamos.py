@@ -4,8 +4,8 @@ import flet as ft
 
 from ...modelo import DIAS_PLAZO, EstadoFisico, EstadoPrestamo, TipoPrestamo
 from ...reportes.estructura import formatear
-from ..componentes import (en_fila, Tabla, boton, campo, desplegable, id_seleccionado, opciones, pastilla, texto_o_none,
-                           titulo_pantalla)
+from ..componentes import (en_fila, Tabla, boton, campo, desplegable, etiqueta_estado, id_seleccionado, opciones,
+                           pastilla, texto_o_none, titulo_pantalla)
 from ..estilo import AVISO, ERROR, EXITO
 
 FILTROS = {
@@ -159,7 +159,7 @@ class PantallaPrestamos:
                                 fila["sede_destino_id"])
         # Se parte del estado que el ejemplar tenía al prestarse; solo puede quedar igual o empeorar
         actual = fila["estado_fisico_ejemplar"]
-        estado = desplegable("Estado físico", [(x, x.capitalize().replace("Daniado", "Dañado"))
+        estado = desplegable("Estado físico", [(x, etiqueta_estado(x))
                                                for x in EstadoFisico.posibles_desde(actual)], actual)
         observaciones = campo("Observaciones", multiline=True, min_lines=2)
         sancion = self.app.servicios.prestamos.sancion_prevista(fila["id"])
@@ -201,7 +201,8 @@ class PantallaPrestamos:
             _seccion("Devolución", [
                 ("Fecha", formatear(d["fecha"])),
                 ("Recibido en", d["sede_recepcion"]),
-                ("Estado físico", pastilla(d["estado_fisico"], "verde" if d["estado_fisico"] == "BUENO" else None)),
+                ("Estado físico", pastilla(d["estado_fisico"],
+                                           "verde" if d["estado_fisico"] == EstadoFisico.BUENO else None)),
                 ("Días de atraso", str(d["dias_atraso"]) if d["dias_atraso"] else "Sin atraso"),
                 ("Observaciones", ft.Text(observaciones, selectable=True, italic=not d["observaciones"])),
             ]),

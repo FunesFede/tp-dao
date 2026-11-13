@@ -26,7 +26,6 @@ def test_ciclo_completo_del_remito_registra_cada_movimiento():
     assert r.estado == "RECIBIDO"
     assert [m.estado_nuevo for m in r.historial] == [
         "EN_PREPARACION", "DESPACHADO", "EN_TRANSITO", "EN_TRANSITO", "RECIBIDO"]
-    assert r.finalizado
 
 
 def test_operaciones_no_permitidas_por_el_estado():

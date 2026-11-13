@@ -43,9 +43,10 @@ SOCIOS = [  # clave, dni, nombre, apellido, sede de alta
     ("s9", "27345678", "Agustín", "Castro", "G"),
     ("s10", "42345678", "Florencia", "Molina", "S"),
     ("s11", "34567890", "Nicolás", "Ortiz", "N"),
+    ("s12", "43456789", "Paula", "Benítez", "G"),   # recién asociada: sin préstamos ni reservas
 ]
 
-LIBROS = [  # isbn, título, autor, editorial, año, sedes de sus ejemplares
+LIBROS = [  # isbn, título, autor, editorial, año, sedes de sus ejemplares[, tipo de material]
     ("9789500000017", "Rayuela", "Julio Cortázar", "Sudamericana", 1963, "CCN"),
     ("9789500000024", "Ficciones", "Jorge Luis Borges", "Emecé", 1944, "CS"),
     ("9789500000031", "El túnel", "Ernesto Sabato", "Sur", 1948, "NS"),
@@ -62,6 +63,12 @@ LIBROS = [  # isbn, título, autor, editorial, año, sedes de sus ejemplares
     ("9789500000147", "Facundo", "Domingo F. Sarmiento", "Eudeba", 1845, "CA"),
     ("9789500000154", "Los siete locos", "Roberto Arlt", "Losada", 1929, "NSA"),
     ("9789500000161", "Las venas abiertas de América Latina", "Eduardo Galeano", "Siglo XXI", 1971, "GC"),
+    ("9789500000178", "Revista Sur, número 1", "Victoria Ocampo (dir.)", "Sur", 1931, "C", "REVISTA"),
+    ("9789500000185", "Mapa vial de la provincia de Córdoba", "Agencia Córdoba Turismo", None, 2019, "CG",
+     "MAPA"),
+    ("9789500000192", "Borges en su voz (audiolibro)", "Jorge Luis Borges", "Audiolibros del Sur", 2004, "N",
+     "MULTIMEDIA"),
+    ("9789500000208", "Lotería de palabras (juego didáctico)", "Equipo de Bibliored", None, 2020, "S", "OTRO"),
 ]
 
 DIAS = 70
@@ -149,8 +156,8 @@ class CargaDePrueba:
             correo = f"{nombre}.{apellido}".lower().translate(str.maketrans("áéíóú", "aeiou")) + "@correo.test"
             telefono = f"351 15-{dni[2:5]}-{dni[5:]}"   # celular de Córdoba armado a partir del DNI
             self.socio[clave] = s.socios.crear(dni, nombre, apellido, self.sede[sede], correo, telefono).id
-        for isbn, titulo, autor, editorial, anio, sedes in LIBROS:
-            self.libro[titulo] = s.catalogo.crear_libro(isbn, titulo, autor, editorial, anio).id
+        for isbn, titulo, autor, editorial, anio, sedes, *tipo in LIBROS:
+            self.libro[titulo] = s.catalogo.crear_libro(isbn, titulo, autor, editorial, anio, *tipo).id
             for sede in sedes:
                 s.catalogo.agregar_ejemplar(self.libro[titulo], self.sede[sede])
 
@@ -243,6 +250,55 @@ class CargaDePrueba:
         e(69, "09:00", self.prestar("I9", "s6", "Rayuela", "N", "C"))             # en preparación
         e(69, "09:30", self.reservar("RV4", "s4", "Pedro Páramo", "G"))           # asignada
 
+    def casos_adicionales(self) -> None:
+        """Casos que completan todos los estados y reglas de negocio."""
+        e = self.en
+        # Suspensión ya cumplida: devuelto 3 días tarde en Güemes (1 día por día de atraso)
+        e(2, "10:30", self.prestar("L17", "s9", "Martín Fierro", "G"))
+        e(19, "11:00", self.devolver("L17", "G"))
+
+        # Devolución destruida: el ejemplar queda dado de baja
+        e(20, "10:00", self.prestar("L15", "s5", "Martín Fierro", "C"))
+        e(28, "10:00", self.devolver("L15", "C", "DESTRUIDO", "Se mojó por completo en una inundación"))
+
+        # Remito recibido con un ejemplar destruido: el préstamo se cancela (Norte -> Sur)
+        e(23, "10:00", self.prestar("I13", "s11", "Cien años de soledad", "N", "S"))
+        e(24, "10:00", self.despachar("I13"))
+        e(26, "10:00", self.recibir("I13", {"I13": ResultadoRecepcion.DESTRUIDO}))
+
+        # Reparación de un ejemplar devuelto en estado regular
+        e(25, "09:00", lambda: self.s.catalogo.reparar_ejemplar(self._ejemplar_prestable("Ficciones", "S"), "BUENO"))
+
+        # Interbibliotecario vencido de una sede con suspensión (Norte -> Central)
+        e(30, "09:00", self.prestar("I10", "s4", "Los siete locos", "N", "C"))
+        e(31, "10:00", self.despachar("I10"))
+        e(33, "10:00", self.recibir("I10"))
+        e(34, "10:00", self.entregar("I10"))                                       # vence el día 55
+
+        # Reserva asignada que nadie retiró: expira al procesar los vencimientos
+        e(40, "09:00", self.reservar("RV5", "s1", "La tregua", "C"))
+        e(47, "08:00", lambda: self.s.procesar_vencimientos())                    # apertura de la aplicación
+
+        # Devolución en otra sede: el ejemplar vuelve a la suya en un remito de retorno
+        e(41, "10:00", self.prestar("L13", "s6", "Las venas abiertas de América Latina", "C"))
+        e(50, "11:00", self.devolver("L13", "S", "REGULAR", "Hojas subrayadas"))
+        e(52, "10:00", self.despachar("L13"))
+        e(54, "10:00", self.recibir("L13"))
+
+        # Préstamo local vencido de una sede con suspensión (Norte)
+        e(45, "11:00", self.prestar("L12", "s11", "Martín Fierro", "N"))           # vence el día 59
+
+        # Remito de retorno en preparación: el ejemplar espera en Central para volver a Sur
+        e(55, "10:00", self.prestar("L14", "s10", "El túnel", "S"))
+        e(67, "11:00", self.devolver("L14", "C"))
+
+        # Socio en el límite de préstamos abiertos (s3: L8, I7 y este)
+        e(68, "11:00", self.prestar("L16", "s3", "Bestiario", "S"))
+
+        # Remito despachado que todavía no registró tránsito (Central -> Norte)
+        e(69, "10:00", self.prestar("I12", "s8", "Facundo", "C", "N"))
+        e(69, "15:00", self.despachar("I12"))
+
     def _prestamo_activo_de(self, socio: str) -> int:
         filas = self.s.prestamos.listar(("ACTIVO", "VENCIDO"))
         return next(f["id"] for f in filas if f["socio_id"] == self.socio[socio])
@@ -250,6 +306,7 @@ class CargaDePrueba:
     def ejecutar(self) -> None:
         self.preparar()
         self.escenario()
+        self.casos_adicionales()
         for momento, _, accion in sorted(self.eventos, key=lambda x: (x[0], x[1])):
             self.reloj.fijar(momento)
             accion()

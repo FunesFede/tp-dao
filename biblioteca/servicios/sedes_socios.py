@@ -40,6 +40,16 @@ class ServicioSedes(ServicioBase):
             if r.sedes.contar_remitos_en_curso(sede_id):
                 raise ErrorNegocio(f"La sede {sede.nombre} tiene envíos en curso; "
                                    "hay que recibirlos o anularlos antes de darla de baja")
+            pendientes = r.sedes.contar_pendientes(sede_id)
+            motivos = [f"{n} {texto}" for n, texto in (
+                (pendientes["prestamos"], "préstamo(s) abiertos que salen de ella o se retiran en ella"),
+                (pendientes["reservas"], "reserva(s) vigentes para retirar en ella"),
+                (pendientes["ajenos"], "ejemplar(es) de otras sedes que están en ella"),
+                (pendientes["propios_afuera"], "ejemplar(es) propios que están en otras sedes"),
+            ) if n]
+            if motivos:
+                raise ErrorNegocio(f"La sede {sede.nombre} no se puede dar de baja porque tiene "
+                                   + "; ".join(motivos) + ". Hay que cerrarlos o devolverlos antes.")
             sede.dar_de_baja(self.ahora().date())
             r.sedes.actualizar(sede)
 

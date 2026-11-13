@@ -48,6 +48,25 @@ class SedeDAO:
         """, (sede_id, sede_id)).fetchone()
         return fila[0]
 
+    def contar_pendientes(self, sede_id: int) -> dict[str, int]:
+        """Lo que impide dar de baja la sede: préstamos, reservas y ejemplares que todavía dependen de ella."""
+        fila = self.cx.execute("""
+            SELECT
+                (SELECT COUNT(*) FROM prestamo
+                 WHERE (sede_origen_id = ? OR sede_destino_id = ?)
+                   AND estado IN ('SOLICITADO', 'EN_TRANSITO', 'LISTO_PARA_RETIRO', 'ACTIVO', 'VENCIDO'))
+                    AS prestamos,
+                (SELECT COUNT(*) FROM reserva
+                 WHERE sede_retiro_id = ? AND estado IN ('PENDIENTE', 'ASIGNADA')) AS reservas,
+                (SELECT COUNT(*) FROM ejemplar
+                 WHERE sede_actual_id = ? AND sede_id <> ? AND estado NOT IN ('BAJA', 'EXTRAVIADO'))
+                    AS ajenos,
+                (SELECT COUNT(*) FROM ejemplar
+                 WHERE sede_id = ? AND sede_actual_id <> ? AND estado NOT IN ('BAJA', 'EXTRAVIADO'))
+                    AS propios_afuera
+        """, (sede_id,) * 7).fetchone()
+        return dict(fila)
+
     @staticmethod
     def _valores(s: Sede) -> tuple:
         return (s.nombre, s.direccion, s.telefono, s.email, s.horario, int(s.activa),

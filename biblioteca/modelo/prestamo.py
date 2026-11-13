@@ -21,7 +21,6 @@ class EstadoPrestamo:
     CANCELADO = "CANCELADO"
     ABIERTOS = (SOLICITADO, EN_TRANSITO, LISTO_PARA_RETIRO, ACTIVO, VENCIDO)
     CERRADOS = (DEVUELTO, CANCELADO)
-    TODOS = ABIERTOS + CERRADOS
 
 
 # Reglas de negocio definidas por el equipo
@@ -56,12 +55,6 @@ class Prestamo:
         return cls(socio_id, ejemplar_id, tipo, sede_origen_id, sede_destino_id, ahora)
 
     # --- consultas -----------------------------------------------------------
-    def es_interbibliotecario(self) -> bool:
-        return self.tipo == TipoPrestamo.INTER
-
-    def esta_abierto(self) -> bool:
-        return self.estado in EstadoPrestamo.ABIERTOS
-
     @property
     def dias_plazo(self) -> int:
         return DIAS_PLAZO[self.tipo]

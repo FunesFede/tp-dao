@@ -175,7 +175,7 @@ CREATE TABLE sancion (
     prestamo_id       INTEGER NOT NULL REFERENCES prestamo(id),
     socio_id          INTEGER NOT NULL REFERENCES socio(id),
     tipo              TEXT    NOT NULL CHECK (tipo IN ('MONETARIA', 'SUSPENSION')),
-    motivo            TEXT    NOT NULL CHECK (motivo IN ('ATRASO', 'DANIO', 'PERDIDA')),
+    motivo            TEXT    NOT NULL CHECK (motivo IN ('ATRASO')),
     dias_atraso       INTEGER NOT NULL DEFAULT 0 CHECK (dias_atraso >= 0),
     monto             REAL    CHECK (monto >= 0),
     pagada            INTEGER CHECK (pagada IN (0, 1)),

@@ -13,7 +13,6 @@ class EstadoReserva:
     CANCELADA = "CANCELADA"
     EXPIRADA = "EXPIRADA"
     VIGENTES = (PENDIENTE, ASIGNADA)
-    TODOS = (PENDIENTE, ASIGNADA, CUMPLIDA, CANCELADA, EXPIRADA)
 
 
 DIAS_PARA_RETIRAR = 3
@@ -31,9 +30,6 @@ class Reserva:
     fecha_expiracion: date | None = None
     id: int | None = None
 
-    def esta_vigente(self) -> bool:
-        return self.estado in EstadoReserva.VIGENTES
-
     def _exigir(self, estados: tuple[str, ...], accion: str) -> None:
         if self.estado not in estados:
             raise ErrorNegocio(f"No se puede {accion} una reserva en estado {self.estado}")
@@ -44,8 +40,10 @@ class Reserva:
         self.ejemplar_asignado_id = ejemplar_id
         self.fecha_expiracion = hoy + timedelta(days=DIAS_PARA_RETIRAR)
 
-    def cumplir(self) -> None:
+    def cumplir(self, hoy: date) -> None:
         self._exigir((EstadoReserva.ASIGNADA,), "retirar")
+        if self.fecha_expiracion < hoy:
+            raise ErrorNegocio(f"El plazo para retirar la reserva venció el {self.fecha_expiracion:%d/%m/%Y}")
         self.estado = EstadoReserva.CUMPLIDA
 
     def cancelar(self) -> None:

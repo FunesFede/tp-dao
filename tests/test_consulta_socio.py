@@ -142,3 +142,12 @@ def test_socio_suspendido_ve_el_aviso(servicios):
     ingreso.aplicacion.mostrar(3)
     situacion = ingreso.aplicacion.pantallas[3]
     assert situacion.estado.value == "Suspendido" and situacion.aviso.visible
+    assert situacion.motivo.value.startswith("Está suspendido hasta el ")
+
+
+def test_socio_inhabilitado_ve_el_motivo(servicios):
+    ingreso, pagina = ingresar(servicios, TOMAS)
+    ingreso.aplicacion.mostrar(3)
+    situacion = ingreso.aplicacion.pantallas[3]
+    assert situacion.estado.value == "Inhabilitado" and situacion.aviso.visible
+    assert situacion.motivo.value == "Motivo: Documentación de domicilio pendiente."

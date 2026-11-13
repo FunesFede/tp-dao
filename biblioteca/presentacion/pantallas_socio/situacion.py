@@ -7,6 +7,13 @@ from ..componentes import Tabla, mayuscula_inicial, titulo_pantalla
 from ..estilo import ERROR, EXITO, LINEA, SUPERFICIE, encabezado
 
 
+def estado_socio(datos: dict) -> str:
+    """Habilitado, Inhabilitado (inhabilitación manual) o Suspendido (por una sanción)."""
+    if not datos["bloqueado"]:
+        return "Habilitado"
+    return "Inhabilitado" if datos["socio"].inhabilitado_manual else "Suspendido"
+
+
 def _tarjeta(titulo: str, controles: list[ft.Control]) -> ft.Control:
     return ft.Container(
         content=ft.Column(controls=[ft.Text(titulo, size=13, color=ft.Colors.ON_SURFACE_VARIANT), *controles],
@@ -44,15 +51,14 @@ class PantallaSituacionSocio:
 
     def refrescar(self) -> None:
         datos = self.app.consulta.situacion(self.app.socio.id)
-        situacion = datos["situacion"]
-        bloqueado = situacion != "habilitado"
-        if situacion.startswith("suspendido"):
-            self.estado.value, self.motivo.value = "Suspendido", f"Está {situacion}."
-        elif situacion.startswith("inhabilitado"):
-            motivo = mayuscula_inicial(situacion.split(":", 1)[1].strip())
-            self.estado.value, self.motivo.value = "Inhabilitado", f"Motivo: {motivo}."
+        socio, bloqueado = datos["socio"], datos["bloqueado"]
+        self.estado.value = estado_socio(datos)
+        if not bloqueado:
+            self.motivo.value = "Puede pedir préstamos y hacer reservas."
+        elif socio.inhabilitado_manual:
+            self.motivo.value = f"Motivo: {mayuscula_inicial(socio.motivo_inhabilitacion)}."
         else:
-            self.estado.value, self.motivo.value = "Habilitado", "Puede pedir préstamos y hacer reservas."
+            self.motivo.value = f"Está suspendido hasta el {socio.suspendido_hasta:%d/%m/%Y}."
         self.estado.color = ERROR[0] if bloqueado else EXITO[0]
         self.aviso.visible = bloqueado
 

@@ -18,7 +18,7 @@ from .estilo import ACENTO, LINEA, MENU_TEXTO, MENU_TEXTO_SUAVE, encabezado
 from .pantallas_socio.catalogo import PantallaCatalogoSocio
 from .pantallas_socio.prestamos import PantallaPrestamosSocio
 from .pantallas_socio.reservas import PantallaReservasSocio
-from .pantallas_socio.situacion import PantallaSituacionSocio
+from .pantallas_socio.situacion import PantallaSituacionSocio, estado_socio
 
 SECCIONES_SOCIO = [
     ("Catálogo", ft.Icons.MENU_BOOK_OUTLINED, ft.Icons.MENU_BOOK, PantallaCatalogoSocio),
@@ -28,13 +28,8 @@ SECCIONES_SOCIO = [
 ]
 
 
-def pastilla_situacion(situacion: str) -> ft.Control:
-    """habilitado / suspendido hasta... / inhabilitado: ... -> pastilla corta con su color."""
-    if situacion.startswith("suspendido"):
-        return pastilla("Suspendido", "rojo")
-    if situacion.startswith("inhabilitado"):
-        return pastilla("Inhabilitado", "rojo")
-    return pastilla("Habilitado", "verde")
+def pastilla_situacion(datos: dict) -> ft.Control:
+    return pastilla(estado_socio(datos), "rojo" if datos["bloqueado"] else "verde")
 
 
 class AplicacionSocio(AplicacionBase):
@@ -49,7 +44,7 @@ class AplicacionSocio(AplicacionBase):
         return self.servicios.consulta_socio
 
     def build(self) -> ft.Control:
-        situacion = self.consulta.situacion(self.socio.id)["situacion"]
+        situacion = self.consulta.situacion(self.socio.id)
         navegacion = self.crear_navegacion([
             ft.Icon(ft.Icons.ACCOUNT_CIRCLE, color=ACENTO, size=38),
             encabezado(f"{self.socio.nombre} {self.socio.apellido}", size=15, color=MENU_TEXTO, width=190,

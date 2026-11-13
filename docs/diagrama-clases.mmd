@@ -13,7 +13,10 @@ classDiagram
         +politica_sancion: str
         +monto_por_dia: float
         +factor_suspension: int
+        +validar()
         +dar_de_baja(fecha)
+        +reactivar()
+        +exigir_activa()
         +estrategia_sancion() EstrategiaSancion
     }
     class Socio {
@@ -21,10 +24,15 @@ classDiagram
         +nombre: str
         +apellido: str
         +email: str
+        +telefono: str
         +suspendido_hasta: date
         +inhabilitado_manual: bool
         +motivo_inhabilitacion: str
+        +fecha_alta: date
+        +nombre_completo() str
+        +esta_suspendido(hoy) bool
         +esta_inhabilitado(hoy) bool
+        +motivo_bloqueo(hoy) str
         +exigir_habilitado(hoy)
         +suspender_hasta(fecha)
         +inhabilitar(motivo)
@@ -37,7 +45,6 @@ classDiagram
         +editorial: str
         +anio: int
         +tipo_material: str
-        +ejemplares_disponibles(sede) list~Ejemplar~
     }
     class Ejemplar {
         +codigo_inventario: str
@@ -52,7 +59,17 @@ classDiagram
         +devolver(sede_id, estado_fisico)
         +despachar()
         +recibir_en(sede_id, resultado, apartado)
+        +reparar(estado_fisico)
         +dar_de_baja()
+    }
+    class EstadoFisico {
+        <<enumeration>>
+        BUENO
+        REGULAR
+        DANIADO
+        DESTRUIDO
+        +posibles_desde(actual)$ tuple
+        +mejores_que(actual)$ tuple
     }
 
     %% ===== Circulación =====
@@ -63,7 +80,8 @@ classDiagram
         +fecha_vencimiento: date
         +fecha_devolucion: datetime
         +estado: str
-        +es_interbibliotecario() bool
+        +nuevo(socio_id, ejemplar_id, origen_id, destino_id, ahora)$ Prestamo
+        +dias_plazo() int
         +marcar_en_transito()
         +marcar_listo_para_retiro()
         +entregar(ahora)
@@ -77,7 +95,7 @@ classDiagram
         +fecha_expiracion: date
         +estado: str
         +asignar(ejemplar_id, hoy)
-        +cumplir()
+        +cumplir(hoy)
         +cancelar()
         +expirar(hoy) bool
     }
@@ -92,9 +110,11 @@ classDiagram
         +numero: str
         -_estado: EstadoRemito
         -_observadores: list~ObservadorRemito~
+        +fecha_creacion: datetime
         +ejemplares: dict
         +recepcion: dict
         +estado() str
+        +estado_desde_codigo(codigo)$ EstadoRemito
         +agregar_ejemplar(ejemplar_id, prestamo_id)
         +quitar_ejemplar(ejemplar_id)
         +despachar(sede_id)
@@ -118,7 +138,6 @@ classDiagram
     class EstadoRemito {
         <<abstract>>
         +codigo: str
-        +es_final: bool
         +agregar_ejemplar(remito, ejemplar_id, prestamo_id)
         +quitar_ejemplar(remito, ejemplar_id)
         +despachar(remito, sede_id)
@@ -157,6 +176,7 @@ classDiagram
     class EstrategiaSancion {
         <<abstract>>
         +aplicar(prestamo, socio, dias_atraso, ahora) Sancion
+        +descripcion() str
     }
     class SancionMonetaria {
         +monto_por_dia: float
@@ -176,6 +196,8 @@ classDiagram
         +motivo: str
         +dias_atraso: int
         +fecha: datetime
+        +tipo() str
+        +descripcion() str
     }
     class Multa {
         +monto: float
@@ -190,6 +212,7 @@ classDiagram
     Socio "*" --> "1" Sede : sede de alta
     Libro "1" o-- "*" Ejemplar : copias
     Ejemplar "*" --> "1" Sede : propietaria / ubicacion actual
+    Ejemplar ..> EstadoFisico
 
     Prestamo "*" --> "1" Socio
     Prestamo "*" --> "1" Ejemplar

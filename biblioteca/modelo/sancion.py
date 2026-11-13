@@ -31,9 +31,7 @@ def pesos(monto: float) -> str:
 
 
 class MotivoSancion:
-    ATRASO = "ATRASO"
-    DANIO = "DANIO"
-    PERDIDA = "PERDIDA"
+    ATRASO = "ATRASO"   # única causa de sanción definida
 
 
 class TipoSancion:

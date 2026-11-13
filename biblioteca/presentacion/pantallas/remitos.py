@@ -4,7 +4,7 @@ import flet as ft
 
 from ...modelo import ResultadoRecepcion
 from ...reportes.estructura import formatear
-from ..componentes import Tabla, boton, campo, desplegable, pastilla, titulo_pantalla
+from ..componentes import Tabla, boton, campo, desplegable, etiqueta_estado, pastilla, titulo_pantalla
 from ..estilo import ACENTO, encabezado
 
 ACCIONES_POR_ESTADO = {
@@ -125,8 +125,7 @@ class PantallaRemitos:
         filas = []
         for ej in self.detalle["ejemplares"]:
             resultados[ej["ejemplar_id"]] = desplegable(
-                "Resultado", [(r, {"OK": "Correcto", "DANIADO": "Dañado", "FALTANTE": "Faltante",
-                                   "DESTRUIDO": "Destruido"}[r]) for r in ResultadoRecepcion.TODOS],
+                "Resultado", [(r, etiqueta_estado(r)) for r in ResultadoRecepcion.TODOS],
                 ResultadoRecepcion.OK, ancho=230)
             filas.append(ft.Row(controls=[
                 ft.Column(controls=[ft.Text(ej["titulo"], weight=ft.FontWeight.W_500),

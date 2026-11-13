@@ -70,7 +70,8 @@ class ServicioReservas(ServicioBase):
             socio = self._obtener(r.socios.obtener_por_id(socio_id), "el socio")
             libro = self._obtener(r.libros.obtener_por_id(libro_id), "el libro")
             sede = self._obtener(r.sedes.obtener_por_id(sede_retiro_id), "la sede")
-            socio.exigir_habilitado(ahora.date())
+            # Si no puede llevarse un libro más, tampoco puede reservarlo
+            validar_socio_para_prestamo(r, socio, ahora.date())
             sede.exigir_activa()
             if r.ejemplares.contar_de_sede(libro.id, sede.id) == 0:
                 raise ErrorNegocio(f"La sede {sede.nombre} no tiene ejemplares de «{libro.titulo}». "
@@ -91,7 +92,7 @@ class ServicioReservas(ServicioBase):
             r.sedes.obtener_por_id(reserva.sede_retiro_id).exigir_activa()
             validar_socio_para_prestamo(r, socio, ahora.date())
             ejemplar = r.ejemplares.obtener_por_id(reserva.ejemplar_asignado_id)
-            reserva.cumplir()
+            reserva.cumplir(ahora.date())
             r.reservas.actualizar(reserva)
             prestamo = crear_prestamo_local(r, socio, ejemplar, ahora)
             return f"Reserva retirada. Préstamo #{prestamo.id}, vence el {prestamo.fecha_vencimiento:%d/%m/%Y}."

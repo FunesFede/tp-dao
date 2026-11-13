@@ -213,7 +213,7 @@ erDiagram
         int prestamo_id FK
         int socio_id FK
         string tipo "MONETARIA | SUSPENSION"
-        string motivo "ATRASO | DANIO | PERDIDA"
+        string motivo "ATRASO"
         int dias_atraso
         float monto "solo MONETARIA"
         bool pagada "solo MONETARIA"

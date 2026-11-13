@@ -6,7 +6,7 @@ ServicioReservas para no duplicar sus validaciones.
 """
 from __future__ import annotations
 
-from ..modelo import MAX_PRESTAMOS_ABIERTOS, ErrorNegocio, EstadoPrestamo, Reserva, Socio
+from ..modelo import MAX_PRESTAMOS_ABIERTOS, ErrorNegocio, EstadoPrestamo, Reserva, Socio, TipoSancion
 from .base import ServicioBase
 from .prestamos import ServicioPrestamos
 from .remitos_reservas import ServicioReservas
@@ -33,10 +33,11 @@ class ServicioConsultaSocio(ServicioBase):
             socio = self._obtener(r.socios.obtener_por_id(socio_id), "el socio")
             prestamos_abiertos = r.socios.contar_prestamos_abiertos(socio_id)
             sanciones = r.sanciones.listar_resumen(socio_id)
-        multas = [s for s in sanciones if s["tipo"] == "MONETARIA" and not s["pagada"]]
+        multas = [s for s in sanciones if s["tipo"] == TipoSancion.MONETARIA and not s["pagada"]]
         return {
             "socio": socio,
             "situacion": socio.motivo_bloqueo(hoy) or "habilitado",
+            "bloqueado": socio.esta_inhabilitado(hoy),
             "prestamos_abiertos": prestamos_abiertos,
             "max_prestamos": MAX_PRESTAMOS_ABIERTOS,
             "multas_impagas": multas,

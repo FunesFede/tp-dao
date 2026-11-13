@@ -8,7 +8,7 @@ from ..datos.repositorios import Repositorios
 from ..modelo import (MAX_PRESTAMOS_ABIERTOS, CalculadoraSancion, Devolucion, Ejemplar,
                       ErrorNegocio, EstadoEjemplar, EstadoPrestamo, Multa, Prestamo, Sancion, Socio)
 from .base import ServicioBase
-from .operaciones import ejemplar_quedo_libre, empaquetar
+from .operaciones import ejemplar_quedo_libre, empaquetar, quitar_de_remito_en_preparacion
 
 
 @dataclass
@@ -105,13 +105,8 @@ class ServicioPrestamos(ServicioBase):
                 raise ErrorNegocio("El ejemplar está viajando; el préstamo se puede cancelar cuando llegue")
             ejemplar = r.ejemplares.obtener_por_id(prestamo.ejemplar_id)
             if prestamo.estado == EstadoPrestamo.SOLICITADO:
-                remito = r.remitos.obtener_en_curso_por_ejemplar(ejemplar.id)
-                if remito is not None:
-                    remito.quitar_ejemplar(ejemplar.id)
-                    if not remito.ejemplares:   # sin ejemplares el remito no tiene sentido: se anula
-                        remito.reloj = self.reloj.ahora
-                        remito.anular(remito.sede_origen_id, f"Anulado al cancelar el préstamo #{prestamo.id}")
-                    r.remitos.guardar(remito)
+                quitar_de_remito_en_preparacion(r, ejemplar.id, f"Anulado al cancelar el préstamo #{prestamo.id}",
+                                                self.reloj)
             prestamo.cancelar()
             r.prestamos.actualizar(prestamo)
             if ejemplar.estado == EstadoEjemplar.RESERVADO:

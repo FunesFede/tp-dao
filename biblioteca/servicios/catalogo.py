@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from ..modelo import Ejemplar, ErrorNegocio, Libro
 from .base import ServicioBase
-from .operaciones import asignar_reservas, empaquetar
+from .operaciones import asignar_reservas, empaquetar, quitar_de_remito_en_preparacion
 
 
 class ServicioCatalogo(ServicioBase):
@@ -10,10 +10,6 @@ class ServicioCatalogo(ServicioBase):
     def listar_libros(self, texto: str = "") -> list[dict]:
         with self._transaccion() as r:
             return r.libros.listar_resumen(texto)
-
-    def obtener_libro(self, libro_id: int) -> Libro:
-        with self._transaccion() as r:
-            return self._obtener(r.libros.obtener_por_id(libro_id), "el libro")
 
     def crear_libro(self, isbn: str, titulo: str, autor: str, editorial: str | None = None,
                     anio: int | None = None, tipo_material: str = "LIBRO") -> Libro:
@@ -53,11 +49,16 @@ class ServicioCatalogo(ServicioBase):
             asignar_reservas(r, libro_id, sede_id, self.ahora().date())
         return ejemplar
 
-    def dar_de_baja_ejemplar(self, ejemplar_id: int) -> None:
+    def dar_de_baja_ejemplar(self, ejemplar_id: int) -> str:
         with self._transaccion() as r:
             ejemplar = self._obtener(r.ejemplares.obtener_por_id(ejemplar_id), "el ejemplar")
             ejemplar.dar_de_baja()
             r.ejemplares.actualizar(ejemplar)
+            # Si esperaba en un remito de retorno, ya no viaja
+            numero = quitar_de_remito_en_preparacion(
+                r, ejemplar.id, f"Anulado al dar de baja el ejemplar {ejemplar.codigo_inventario}", self.reloj)
+            mensaje = f"Ejemplar {ejemplar.codigo_inventario} dado de baja"
+            return mensaje + (f" y quitado del remito {numero}" if numero else "")
 
     def reparar_ejemplar(self, ejemplar_id: int, estado_fisico: str) -> None:
         with self._transaccion() as r:

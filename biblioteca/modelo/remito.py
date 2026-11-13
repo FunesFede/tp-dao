@@ -55,7 +55,6 @@ class ObservadorRemito(ABC):
 # ---------------------------------------------------------------------------
 class EstadoRemito(ABC):
     codigo: str = ""
-    es_final: bool = False
 
     def agregar_ejemplar(self, remito: Remito, ejemplar_id: int, prestamo_id: int | None) -> None:
         self._rechazar("agregar ejemplares a")
@@ -143,7 +142,7 @@ class EnTransito(EnCamino):
 
 
 class EstadoFinal(EstadoRemito):
-    es_final = True
+    """Estados sin transiciones: toda operación se rechaza."""
 
 
 class Recibido(EstadoFinal):
@@ -167,7 +166,6 @@ ESTADOS: dict[str, type[EstadoRemito]] = {
     for cls in (EnPreparacion, Despachado, EnTransito, Recibido,
                 RecibidoConIncidencia, Extraviado, Anulado)
 }
-ESTADOS_EN_CURSO = ("EN_PREPARACION", "DESPACHADO", "EN_TRANSITO")
 
 
 # ---------------------------------------------------------------------------
@@ -227,17 +225,10 @@ class Remito:
     def estado(self) -> str:
         return self._estado.codigo
 
-    @property
-    def finalizado(self) -> bool:
-        return self._estado.es_final
-
-    def contiene(self, ejemplar_id: int) -> bool:
-        return ejemplar_id in self.ejemplares
-
     def tiempo_en_transito(self) -> timedelta | None:
-        despacho = next((m for m in self.historial if m.estado_nuevo == "DESPACHADO"), None)
+        despacho = next((m for m in self.historial if m.estado_nuevo == Despachado.codigo), None)
         llegada = next((m for m in self.historial
-                        if m.estado_nuevo in ("RECIBIDO", "RECIBIDO_CON_INCIDENCIA")), None)
+                        if m.estado_nuevo in (Recibido.codigo, RecibidoConIncidencia.codigo)), None)
         if despacho and llegada:
             return llegada.fecha_hora - despacho.fecha_hora
         return None

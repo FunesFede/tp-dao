@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import flet as ft
 
+from ...modelo import TipoSancion
 from ...modelo.sancion import pesos
 from ...reportes.estructura import formatear
 from ..componentes import (en_fila, Tabla, boton, campo, desplegable, id_seleccionado, pastilla, texto_o_none,
@@ -115,14 +116,15 @@ class PantallaSocios:
 
         def cargar():
             sanciones = self.app.servicios.socios.listar_sanciones(fila["id"])
-            impagas = {s["id"] for s in sanciones if s["tipo"] == "MONETARIA" and not s["pagada"]}
+            impagas = {s["id"] for s in sanciones if s["tipo"] == TipoSancion.MONETARIA and not s["pagada"]}
             tabla.cargar([
-                (s["id"], [s["fecha"], s["titulo"], "Multa" if s["tipo"] == "MONETARIA" else "Suspensión",
+                (s["id"], [s["fecha"], s["titulo"], "Multa" if s["tipo"] == TipoSancion.MONETARIA else "Suspensión",
                            s["dias_atraso"],
-                           pesos(s["monto"]) if s["tipo"] == "MONETARIA"
+                           pesos(s["monto"]) if s["tipo"] == TipoSancion.MONETARIA
                            else f"Suspendido hasta {formatear(s['suspendido_hasta'])}",
                            pastilla("Pagada", "verde") if s["pagada"] == 1 else
-                           pastilla("Impaga", "rojo") if s["tipo"] == "MONETARIA" else pastilla("Aplicada", "gris")])
+                           pastilla("Impaga", "rojo") if s["tipo"] == TipoSancion.MONETARIA
+                           else pastilla("Aplicada", "gris")])
                 for s in sanciones])
             btn_pagar.disabled = tabla.seleccionado not in impagas
             tabla.al_seleccionar = lambda i: setattr(btn_pagar, "disabled", i not in impagas)

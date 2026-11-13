@@ -85,11 +85,12 @@ Regla de capas: la interfaz solo llama a los servicios; los servicios usan el mo
 - Máximo 3 préstamos abiertos por socio.
 - Un socio está inhabilitado si tiene una suspensión vigente o una inhabilitación manual (con motivo).
 - Solo se prestan ejemplares disponibles, que pertenezcan a la sede de origen y estén físicamente en ella.
-- No se inician préstamos, reservas ni envíos hacia o desde una sede dada de baja, y no se da de baja una sede con envíos en curso.
+- No se inician préstamos, reservas ni envíos hacia o desde una sede dada de baja. Una sede no se da de baja mientras tenga envíos en curso, préstamos abiertos que salen de ella o se retiran en ella, reservas vigentes, ejemplares de otras sedes en su local o ejemplares propios en otras sedes.
+- Dar de baja un ejemplar que espera en un remito de retorno lo quita del remito (si el remito queda vacío, se anula).
 - Préstamo interbibliotecario: el ejemplar se aparta y se agrega al remito en preparación entre las dos sedes (o se crea uno).
 - Recepción: correcto o dañado → el préstamo queda listo para retirar; faltante o destruido → se cancela, y el ejemplar queda extraviado o de baja.
 - Si un ejemplar se devuelve en una sede que no es la suya, se genera solo un remito de retorno.
-- Reservas: por título, solo en sedes que tienen ejemplares de ese título. Cuando se libera un ejemplar se aparta para la reserva más antigua y el socio tiene 3 días para retirarlo; si no, la reserva expira.
+- Reservas: por título, solo en sedes que tienen ejemplares de ese título, y no puede reservar un socio que ya tiene el máximo de préstamos abiertos. Cuando se libera un ejemplar se aparta para la reserva más antigua y el socio tiene 3 días para retirarlo; pasado ese plazo ya no puede retirarlo y la reserva expira. Si se anula el remito de un préstamo interbibliotecario, el ejemplar liberado también atiende las reservas pendientes.
 - Al abrir la aplicación se marcan los préstamos vencidos y expiran las reservas no retiradas.
 
 ## Reportes
@@ -105,4 +106,4 @@ En pantalla y exportables a PDF (con gráfico) y CSV:
 
 ## Datos de prueba
 
-`seed.py` carga 5 sedes (una dada de baja), 12 socios, 16 libros y 34 ejemplares, y simula 70 días de actividad **a través de los servicios**, con un reloj que avanza: préstamos en término y con atraso, multas (una pagada), suspensiones, remitos recibidos, con daño, con faltante, extraviado y anulado, reservas cumplidas, canceladas, asignadas y pendientes. Termina el día anterior a la carga, así que siempre hay préstamos vencidos y envíos en curso relativos a "hoy".
+`seed.py` carga 5 sedes (una dada de baja), 13 socios, 20 títulos (libros, una revista, un mapa, un audiolibro y un juego didáctico) y 38 ejemplares, y simula 70 días de actividad **a través de los servicios**, con un reloj que avanza. Cubre todos los estados de préstamos, reservas, remitos y ejemplares, y todos los resultados de recepción y estados físicos: préstamos locales e interbibliotecarios en término y con atraso, vencidos de sedes con multa y con suspensión, devoluciones en otra sede con su remito de retorno, ejemplares dañados, destruidos y reparados, multas pagadas e impagas, suspensiones vigentes y cumplidas, un socio inhabilitado, uno en el límite de préstamos y uno sin actividad, remitos en preparación, despachados, en tránsito, recibidos, con daño, con faltante, con un ejemplar destruido, extraviados y anulados, y reservas pendientes, asignadas, cumplidas, canceladas y expiradas. Termina el día anterior a la carga, así que siempre hay préstamos vencidos y envíos en curso relativos a "hoy".

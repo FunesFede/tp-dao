@@ -177,6 +177,74 @@ def test_no_se_da_de_baja_una_sede_con_envios_en_curso(s, red):
         s.sedes.dar_de_baja(red["norte"].id)
 
 
+def test_no_se_da_de_baja_una_sede_con_prestamos_reservas_o_ejemplares_pendientes(s, red):
+    centro, sur = red["centro"].id, red["sur"].id
+    p = s.prestamos.registrar(red["luis"].id, red["e_centro"].id, centro, centro)
+    with pytest.raises(ErrorNegocio, match="1 préstamo"):
+        s.sedes.dar_de_baja(centro)
+    # Devuelto en Sur, el ejemplar espera ahí el remito de retorno: ninguna de las dos sedes se puede dar de baja
+    s.prestamos.registrar_devolucion(p.id, sur, "BUENO")
+    s.remitos.anular(remito_en_curso(s))
+    with pytest.raises(ErrorNegocio, match="ejemplar\\(es\\) propios que están en otras sedes"):
+        s.sedes.dar_de_baja(centro)
+    with pytest.raises(ErrorNegocio, match="ejemplar\\(es\\) de otras sedes"):
+        s.sedes.dar_de_baja(sur)
+    s.catalogo.enviar_a_su_sede(red["e_centro"].id)
+    remito = remito_en_curso(s)
+    s.remitos.despachar(remito)
+    s.remitos.recibir(remito)
+    s.sedes.dar_de_baja(sur)
+    s.sedes.dar_de_baja(centro)
+
+
+def test_no_se_da_de_baja_una_sede_con_reservas_vigentes(s, red):
+    centro = red["centro"].id
+    s.prestamos.registrar(red["luis"].id, red["e_centro"].id, centro, centro)
+    reserva = s.reservas.crear(red["ana"].id, red["libro"].id, centro)
+    with pytest.raises(ErrorNegocio, match="1 reserva"):
+        s.sedes.dar_de_baja(centro)
+    assert reserva.estado == "PENDIENTE"
+
+
+def test_dar_de_baja_un_ejemplar_que_espera_un_remito_de_retorno_lo_quita_del_remito(s, red):
+    centro = red["centro"].id
+    p = s.prestamos.registrar(red["luis"].id, red["e_centro"].id, centro, centro)
+    s.prestamos.registrar_devolucion(p.id, red["sur"].id, "BUENO")
+    remito = remito_en_curso(s)
+    mensaje = s.catalogo.dar_de_baja_ejemplar(red["e_centro"].id)
+    assert "quitado del remito" in mensaje
+    assert s.remitos.detalle(remito)["remito"].estado == "ANULADO"   # quedó vacío
+    assert ejemplar(s, red["e_centro"].id)["estado"] == "BAJA"
+
+
+def test_anular_el_remito_de_un_prestamo_atiende_las_reservas_pendientes(s, red):
+    centro = red["centro"].id
+    s.prestamos.registrar(red["ana"].id, red["e_centro"].id, centro, red["norte"].id)
+    reserva = s.reservas.crear(red["luis"].id, red["libro"].id, centro)
+    assert reserva.estado == "PENDIENTE"
+    s.remitos.anular(remito_en_curso(s))
+    assert s.reservas.listar()[0]["estado"] == "ASIGNADA"
+    assert ejemplar(s, red["e_centro"].id)["estado"] == "RESERVADO"
+
+
+def test_no_reserva_un_socio_con_el_maximo_de_prestamos_abiertos(s, red):
+    centro = red["centro"].id
+    libros = [s.catalogo.crear_libro(f"978950000{n}", f"Libro {n}", "Autor") for n in ("1001", "1002", "1003")]
+    for libro in libros:
+        ejemplar = s.catalogo.agregar_ejemplar(libro.id, centro)
+        s.prestamos.registrar(red["luis"].id, ejemplar.id, centro, centro)
+    with pytest.raises(ErrorNegocio, match="3 préstamos"):
+        s.reservas.crear(red["luis"].id, red["libro"].id, centro)
+
+
+def test_no_se_retira_una_reserva_fuera_de_plazo(s, red, reloj):
+    reserva = s.reservas.crear(red["luis"].id, red["libro"].id, red["centro"].id)
+    assert reserva.estado == "ASIGNADA"
+    reloj.avanzar(days=4)
+    with pytest.raises(ErrorNegocio, match="venció"):
+        s.reservas.retirar(reserva.id)
+
+
 def test_ejemplares_de_sede_dada_de_baja_no_figuran_disponibles(s, red):
     libro_id, norte = red["libro"].id, red["norte"].id
 
@@ -241,7 +309,7 @@ def test_seed_y_reportes(base, tmp_path):
     cargar_datos_de_prueba()
     s = Servicios()
     resumen = s.reportes.resumen()
-    assert resumen["sedes"] == 4 and resumen["vencidos"] == 2 and resumen["remitos_en_curso"] == 2
+    assert resumen["sedes"] == 4 and resumen["vencidos"] == 4 and resumen["remitos_en_curso"] == 4
     for clave in s.reportes.CATALOGO:
         reporte = s.reportes.generar(clave)
         assert reporte.filas, clave

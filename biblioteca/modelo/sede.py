@@ -10,7 +10,6 @@ from .sancion import EstrategiaSancion, SancionMonetaria, SancionSuspension
 class PoliticaSancion:
     MONETARIA = "MONETARIA"
     SUSPENSION = "SUSPENSION"
-    TODAS = (MONETARIA, SUSPENSION)
 
 
 @dataclass
