@@ -120,8 +120,11 @@ class Tabla:
             self.al_seleccionar(self.seleccionado)
 
     def build(self, alto: int | None = None) -> ft.Control:
-        contenido = ft.Column(controls=[ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO), self.vacia],
-                              scroll=ft.ScrollMode.AUTO, spacing=8)
+        # El desplazamiento horizontal envuelve al vertical para que su barra quede siempre al pie del
+        # recuadro: si la tabla no entra a lo ancho, se ve que hay más columnas sin bajar hasta el final
+        filas = ft.Column(controls=[self.tabla, self.vacia], scroll=ft.ScrollMode.AUTO, spacing=8)
+        contenido = ft.Row(controls=[filas], scroll=ft.ScrollMode.ALWAYS,
+                           vertical_alignment=ft.CrossAxisAlignment.START)
         return ft.Container(content=contenido, height=alto, expand=alto is None, bgcolor=SUPERFICIE,
                             border=ft.Border.all(1, LINEA), border_radius=4,
                             padding=ft.Padding.only(bottom=8))

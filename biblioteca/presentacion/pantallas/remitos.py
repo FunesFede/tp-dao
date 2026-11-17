@@ -34,9 +34,11 @@ class PantallaRemitos:
             "extravio": boton("Declarar extravío", ft.Icons.REPORT_PROBLEM, self.declarar_extravio),
             "anular": boton("Anular", ft.Icons.CANCEL_OUTLINED, self.anular),
         }
+        self.btn_detalle = boton("Ocultar detalle", ft.Icons.VISIBILITY_OFF_OUTLINED, self.alternar_detalle)
+        self.panel_detalle: ft.Container | None = None
 
     def build(self) -> ft.Control:
-        detalle = ft.Container(
+        self.panel_detalle = detalle = ft.Container(
             content=ft.Column(controls=[
                 self.cabecera, self.transito,
                 ft.Row(controls=list(self.botones.values()), wrap=True),
@@ -51,7 +53,7 @@ class PantallaRemitos:
             titulo_pantalla("Remitos", "Empaquetado, despacho, tránsito y recepción de ejemplares entre sedes"),
             ft.Text("Los remitos son generados automáticamente al registrar un préstamo interbibliotecario o al "
                     "devolver un ejemplar a su sede de origen.", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
-            self.solo_en_curso,
+            ft.Row(controls=[self.solo_en_curso, self.btn_detalle], spacing=20),
             ft.Row(controls=[ft.Column(controls=[self.tabla.build()], expand=7), detalle], expand=True,
                    vertical_alignment=ft.CrossAxisAlignment.START, spacing=20),
         ], spacing=12, expand=True)
@@ -64,6 +66,15 @@ class PantallaRemitos:
                        f["ultimo_movimiento"]]) for f in filas])
         self.al_seleccionar(self.tabla.seleccionado)
 
+    def alternar_detalle(self, e=None, visible: bool | None = None) -> None:
+        """Oculta el panel de detalle para que la tabla use todo el ancho, o lo vuelve a mostrar."""
+        if self.panel_detalle is None:
+            return
+        self.panel_detalle.visible = not self.panel_detalle.visible if visible is None else visible
+        self.btn_detalle.content = "Ocultar detalle" if self.panel_detalle.visible else "Mostrar detalle"
+        self.btn_detalle.icon = (ft.Icons.VISIBILITY_OFF_OUTLINED if self.panel_detalle.visible
+                                 else ft.Icons.VISIBILITY_OUTLINED)
+
     def al_seleccionar(self, remito_id: int | None) -> None:
         self.detalle = self.app.servicios.remitos.detalle(remito_id) if remito_id else None
         permitidas = set()
@@ -73,6 +84,7 @@ class PantallaRemitos:
             self.tabla_ejemplares.cargar([])
             self.historial.controls = []
         else:
+            self.alternar_detalle(visible=True)   # elegir un remito muestra su detalle
             remito = self.detalle["remito"]
             fila = self.filas[remito_id]
             permitidas = ACCIONES_POR_ESTADO.get(remito.estado, set())
