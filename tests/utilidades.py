@@ -5,6 +5,7 @@ disparan los eventos y confirman, igual que lo haría el usuario.
 """
 import flet as ft
 
+from biblioteca.presentacion.componentes import Selector
 from biblioteca.presentacion.estilo import ERROR
 
 
@@ -35,8 +36,9 @@ class PaginaFalsa:
         encontrados = []
 
         def recorrer(control):
-            if isinstance(control, (ft.Dropdown, ft.TextField)):
+            if isinstance(control, (ft.Dropdown, ft.TextField, Selector)):
                 encontrados.append(control)
+                return
             for hijo in getattr(control, "controls", None) or []:
                 recorrer(hijo)
             if getattr(control, "content", None) is not None and isinstance(control.content, ft.Control):

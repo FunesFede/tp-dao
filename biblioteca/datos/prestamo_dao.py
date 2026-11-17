@@ -41,12 +41,23 @@ class PrestamoDAO:
         """, (fecha_a_texto(hoy),)).fetchall()
         return [self._mapear(f) for f in filas]
 
+    def listar_listos_recibidos_antes_de(self, limite: date) -> list[Prestamo]:
+        """Préstamos listos para retirar cuyo remito llegó a la sede de retiro antes de `limite`."""
+        filas = self.cx.execute("""
+            SELECT DISTINCT p.* FROM prestamo p
+            JOIN remito_detalle d ON d.prestamo_id = p.id
+            JOIN remito_movimiento m ON m.remito_id = d.remito_id
+            WHERE p.estado = 'LISTO_PARA_RETIRO'
+              AND m.estado_nuevo IN ('RECIBIDO', 'RECIBIDO_CON_INCIDENCIA')
+              AND date(m.fecha_hora) < ?
+        """, (fecha_a_texto(limite),)).fetchall()
+        return [self._mapear(f) for f in filas]
+
     def listar_resumen(self, estados: tuple[str, ...] | None = None, texto: str = "",
                        socio_id: int | None = None, prestamo_id: int | None = None) -> list[dict]:
         """Préstamos con socio, libro y sedes. `socio_id` y `prestamo_id` limitan el listado."""
-        patron = f"%{texto.strip()}%"
         filtro_estado = ""
-        parametros: list = [patron, patron, patron, patron, socio_id, socio_id, prestamo_id, prestamo_id]
+        parametros: list = [texto, socio_id, socio_id, prestamo_id, prestamo_id]
         if estados:
             # El f-string solo arma los signos "?"; los valores van siempre como parámetros
             filtro_estado = f"AND p.estado IN ({', '.join('?' for _ in estados)})"
@@ -61,7 +72,8 @@ class PrestamoDAO:
             JOIN libro l ON l.id = e.libro_id
             JOIN sede so ON so.id = p.sede_origen_id
             JOIN sede sd ON sd.id = p.sede_destino_id
-            WHERE (s.apellido LIKE ? OR s.dni LIKE ? OR l.titulo LIKE ? OR e.codigo_inventario LIKE ?)
+            WHERE coincide(?, s.apellido || ' ' || s.nombre || ' ' || s.dni || ' ' || l.titulo || ' '
+                              || e.codigo_inventario)
               AND (? IS NULL OR p.socio_id = ?)
               AND (? IS NULL OR p.id = ?)
               {filtro_estado}

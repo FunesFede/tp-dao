@@ -38,7 +38,6 @@ class SocioDAO:
 
     def listar_resumen(self, texto: str = "") -> list[dict]:
         """Socios con su sede, préstamos abiertos y multas impagas, para mostrar en pantalla."""
-        patron = f"%{texto.strip()}%"
         filas = self.cx.execute("""
             SELECT s.*, se.nombre AS sede,
                    (SELECT COUNT(*) FROM prestamo p
@@ -49,9 +48,9 @@ class SocioDAO:
                      WHERE sa.socio_id = s.id AND sa.tipo = 'MONETARIA' AND sa.pagada = 0) AS deuda
             FROM socio s
             JOIN sede se ON se.id = s.sede_id
-            WHERE s.dni LIKE ? OR s.apellido LIKE ? OR s.nombre LIKE ?
+            WHERE coincide(?, s.apellido || ' ' || s.nombre || ' ' || s.dni)
             ORDER BY s.apellido, s.nombre
-        """, (patron, patron, patron)).fetchall()
+        """, (texto,)).fetchall()
         return [dict(f) | {"socio": self._mapear(f)} for f in filas]
 
     def contar_prestamos_abiertos(self, socio_id: int) -> int:

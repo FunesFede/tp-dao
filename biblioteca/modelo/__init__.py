@@ -1,8 +1,8 @@
 """Modelo de dominio. Python puro: no importa sqlite3 ni Flet."""
 from .catalogo import EstadoEjemplar, EstadoFisico, Ejemplar, Libro, ResultadoRecepcion, TipoMaterial
 from .excepciones import ErrorNegocio, TransicionInvalida
-from .prestamo import (DIAS_PLAZO, MAX_PRESTAMOS_ABIERTOS, Devolucion, EstadoPrestamo, Prestamo,
-                       TipoPrestamo)
+from .prestamo import (DIAS_PARA_RETIRAR_INTER, DIAS_PLAZO, MAX_PRESTAMOS_ABIERTOS, Devolucion, EstadoPrestamo,
+                       Prestamo, TipoPrestamo)
 from .remito import (Anulado, Despachado, EstadoRemito, Extraviado, Movimiento, ObservadorRemito, Recibido,
                      RecibidoConIncidencia, Remito)
 from .reserva import DIAS_PARA_RETIRAR, EstadoReserva, Reserva

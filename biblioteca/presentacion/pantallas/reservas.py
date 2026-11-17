@@ -3,7 +3,7 @@ from __future__ import annotations
 import flet as ft
 
 from ...modelo import DIAS_PARA_RETIRAR, EstadoReserva
-from ..componentes import Tabla, boton, desplegable, id_seleccionado, opciones, pastilla, titulo_pantalla
+from ..componentes import Tabla, boton, desplegable, id_seleccionado, opciones, pastilla, selector, titulo_pantalla
 from ..estilo import ERROR
 
 
@@ -46,10 +46,10 @@ class PantallaReservas:
 
     def nueva(self, e) -> None:
         s = self.app.servicios
-        socio = desplegable("Socio", [(f["id"], f"{f['apellido']}, {f['nombre']} · DNI {f['dni']}")
-                                      for f in s.socios.listar()], filtrable=True)
+        socio = selector("Socio", [(f["id"], f"{f['apellido']}, {f['nombre']} · DNI {f['dni']}")
+                                      for f in s.socios.listar()])
         sede = desplegable("Sede de retiro", [(x.id, x.nombre) for x in s.sedes.listar(solo_activas=True)])
-        libro = desplegable("Libro", [], filtrable=True)
+        libro = selector("Libro", [])
         info = ft.Text("", size=13, color=ft.Colors.ON_SURFACE_VARIANT)
         libros: dict[str, dict] = {}
 

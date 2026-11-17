@@ -5,7 +5,7 @@ import flet as ft
 from ...modelo import DIAS_PLAZO, EstadoFisico, EstadoPrestamo, TipoPrestamo
 from ...reportes.estructura import formatear
 from ..componentes import (en_fila, Tabla, boton, campo, desplegable, etiqueta_estado, id_seleccionado, opciones,
-                           pastilla, texto_o_none, titulo_pantalla)
+                           pastilla, selector, texto_o_none, titulo_pantalla)
 from ..estilo import AVISO, ERROR, EXITO
 
 FILTROS = {
@@ -25,7 +25,7 @@ class PantallaPrestamos:
         self.filtro = desplegable("Mostrar", [(k, v[0]) for k, v in FILTROS.items()], "abiertos", ancho=270,
                                   al_cambiar=lambda e: self.refrescar())
         self.busqueda = campo("Buscar socio, DNI, libro o código", ancho=360, prefix_icon=ft.Icons.SEARCH,
-                              on_submit=lambda e: self.refrescar())
+                              on_change=lambda e: self.refrescar())   # filtra mientras se escribe
         self.tabla = Tabla([("#", True), ("Tipo", False), ("Socio", False), ("Libro", False), ("Código", False),
                             ("Origen", False), ("Retira en", False), ("Estado", False), ("Vence", False),
                             ("Atraso (días)", True)], self.al_seleccionar)
@@ -74,8 +74,8 @@ class PantallaPrestamos:
                   for f in servicios.socios.listar()]
         libros = [(f["id"], f"{f['titulo']} ({f['autor']})") for f in servicios.catalogo.listar_libros()]
 
-        socio = desplegable("Socio", socios, filtrable=True)
-        libro = desplegable("Libro", libros, filtrable=True)
+        socio = selector("Socio", socios)
+        libro = selector("Libro", libros)
         origen = desplegable("Sede de origen", [])
         ejemplar = desplegable("Ejemplar disponible", [])
         destino = desplegable("Sede donde lo retira", sedes)

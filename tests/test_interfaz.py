@@ -124,7 +124,7 @@ def test_alta_de_libro_y_ejemplar(app):
 
 
 def test_reportes_se_exportan(app, tmp_path, monkeypatch):
-    from biblioteca.presentacion.pantallas import reportes
+    from biblioteca.servicios import reportes
     monkeypatch.setattr(reportes, "CARPETA_EXPORTES", tmp_path)
     aplicacion, pagina = app
     p = pantalla(aplicacion, "reportes")
@@ -283,3 +283,27 @@ def test_pagar_multa_muestra_el_aviso_dentro_del_dialogo(app):
     assert pagina.dialogos and pagina.dialogos[-1].data.value == "Pago registrado"   # se ve sobre el modal
     assert not any(f.cells[-1].content.content.value == "Impaga" for f in tabla.rows)
     assert not p.filas[camila]["deuda"]                     # la pantalla de socios también se refrescó
+
+
+def test_selector_busca_sin_tildes_ni_comas(app):
+    aplicacion, pagina = app
+    p = pantalla(aplicacion, "prestamos")
+    p.nuevo(None)
+    socio, libro, origen, destino, ejemplar = pagina.campos()
+    assert [o.text for o in socio.coincidencias("tomas herrera")] == [
+        o.text for o in socio.options if o.text.startswith("Herrera, Tomás")]
+    assert len(socio.coincidencias("")) == len(socio.options)
+    assert socio.coincidencias("zzz") == []
+    libro.elegir(libro.coincidencias("aleph")[0].key)
+    assert not origen.disabled                              # elegir el libro carga las sedes de origen
+    assert len(libro.coincidencias(libro.options[0].text)) >= 1
+
+
+def test_selector_de_libro_en_reserva_usa_las_opciones_de_la_sede(app):
+    aplicacion, pagina = app
+    p = pantalla(aplicacion, "reservas")
+    p.nueva(None)
+    socio, sede, libro = pagina.campos()
+    assert libro.options == []
+    elegir(sede, "Sede Norte")
+    assert libro.options and all(o in libro.options for o in libro.coincidencias(""))

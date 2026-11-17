@@ -2,10 +2,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, timedelta
 
 from ..datos.repositorios import Repositorios
-from ..modelo import (MAX_PRESTAMOS_ABIERTOS, CalculadoraSancion, Devolucion, Ejemplar,
+from ..modelo import (DIAS_PARA_RETIRAR_INTER, MAX_PRESTAMOS_ABIERTOS, CalculadoraSancion, Devolucion, Ejemplar,
                       ErrorNegocio, EstadoEjemplar, EstadoPrestamo, Multa, Prestamo, Sancion, Socio)
 from .base import ServicioBase
 from .operaciones import ejemplar_quedo_libre, empaquetar, quitar_de_remito_en_preparacion
@@ -103,17 +103,33 @@ class ServicioPrestamos(ServicioBase):
             prestamo = self._obtener(r.prestamos.obtener_por_id(prestamo_id), "el préstamo")
             if prestamo.estado == EstadoPrestamo.EN_TRANSITO:
                 raise ErrorNegocio("El ejemplar está viajando; el préstamo se puede cancelar cuando llegue")
-            ejemplar = r.ejemplares.obtener_por_id(prestamo.ejemplar_id)
-            if prestamo.estado == EstadoPrestamo.SOLICITADO:
-                quitar_de_remito_en_preparacion(r, ejemplar.id, f"Anulado al cancelar el préstamo #{prestamo.id}",
-                                                self.reloj)
-            prestamo.cancelar()
-            r.prestamos.actualizar(prestamo)
-            if ejemplar.estado == EstadoEjemplar.RESERVADO:
-                ejemplar.liberar()
-                r.ejemplares.actualizar(ejemplar)
-            aviso = ejemplar_quedo_libre(r, ejemplar, self.reloj)
+            aviso = self._cancelar(r, prestamo)
             return "Préstamo cancelado." + (f" {aviso}" if aviso else "")
+
+    def _cancelar(self, r, prestamo) -> str | None:
+        """Cancela el préstamo y decide qué pasa con el ejemplar que tenía apartado."""
+        ejemplar = r.ejemplares.obtener_por_id(prestamo.ejemplar_id)
+        if prestamo.estado == EstadoPrestamo.SOLICITADO:
+            quitar_de_remito_en_preparacion(r, ejemplar.id, f"Anulado al cancelar el préstamo #{prestamo.id}",
+                                            self.reloj)
+        prestamo.cancelar()
+        r.prestamos.actualizar(prestamo)
+        if ejemplar.estado == EstadoEjemplar.RESERVADO:
+            ejemplar.liberar()
+            r.ejemplares.actualizar(ejemplar)
+        return ejemplar_quedo_libre(r, ejemplar, self.reloj)
+
+    def cancelar_no_retirados(self) -> int:
+        """Cancela los préstamos interbibliotecarios que llegaron y no se retiraron dentro del plazo.
+
+        El ejemplar vuelve a su sede en un remito de retorno.
+        """
+        limite = self.ahora().date() - timedelta(days=DIAS_PARA_RETIRAR_INTER)
+        with self._transaccion() as r:
+            vencidos = r.prestamos.listar_listos_recibidos_antes_de(limite)
+            for prestamo in vencidos:
+                self._cancelar(r, prestamo)
+            return len(vencidos)
 
     def registrar_devolucion(self, prestamo_id: int, sede_recepcion_id: int, estado_fisico: str,
                              observaciones: str | None = None) -> ResultadoDevolucion:

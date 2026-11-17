@@ -318,3 +318,26 @@ def test_seed_y_reportes(base, tmp_path):
     disponibilidad = s.reportes.generar("disponibilidad")
     for fila in disponibilidad.filas:      # cada ejemplar cuenta en una sola columna
         assert fila[2] == sum(fila[3:7])
+
+
+def test_las_busquedas_ignoran_tildes_y_orden(s, red):
+    assert [f["socio"].dni for f in s.socios.listar("ana perez")] == [red["ana"].dni]   # «Pérez, Ana»
+    assert [f["isbn"] for f in s.catalogo.listar_libros("rayuela cortazar")] == [red["libro"].isbn]
+    s.prestamos.registrar(red["luis"].id, red["e_centro"].id, red["centro"].id, red["centro"].id)
+    assert len(s.prestamos.listar(texto="gomez rayuela")) == 1
+
+
+def test_prestamo_inter_no_retirado_se_cancela_al_mes(s, red, reloj):
+    p = s.prestamos.registrar(red["ana"].id, red["e_centro"].id, red["centro"].id, red["norte"].id)
+    remito = s.remitos.listar(True)[0]["id"]
+    reloj.avanzar(hours=1)
+    s.remitos.despachar(remito)
+    reloj.avanzar(hours=5)
+    s.remitos.recibir(remito)
+    reloj.avanzar(days=30)
+    assert s.prestamos.cancelar_no_retirados() == 0                 # el día 30 todavía puede retirarlo
+    reloj.avanzar(days=1)
+    assert s.prestamos.cancelar_no_retirados() == 1
+    assert [f["estado"] for f in s.prestamos.listar() if f["id"] == p.id] == ["CANCELADO"]
+    retorno = [f for f in s.remitos.listar(True) if f["sede_destino"] == "Centro"]
+    assert len(retorno) == 1                                        # el ejemplar vuelve a su sede

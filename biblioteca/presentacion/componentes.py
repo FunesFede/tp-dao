@@ -5,9 +5,10 @@ from typing import Callable
 
 import flet as ft
 
+from ..modelo.texto import coincide
 from ..reportes.estructura import formatear
-from .estilo import (HOVER, ACENTO_CLARO, LINEA, SUPERFICIE, SUPERFICIE_ALTA, FUENTE_SUBTITULO, TEXTO, TEXTO_SUAVE,
-                     encabezado)
+from .estilo import (ACENTO, ACENTO_CLARO, FUENTE_SUBTITULO, HOVER, LINEA, LINEA_FUERTE, SUPERFICIE, SUPERFICIE_ALTA,
+                     TEXTO, TEXTO_SUAVE, encabezado)
 
 # Colores (fondo, letra) de las "pastillas" de estado
 COLORES_ESTADO = {
@@ -119,23 +120,183 @@ class Tabla:
             self.al_seleccionar(self.seleccionado)
 
     def build(self, alto: int | None = None) -> ft.Control:
-        contenido = ft.Column(controls=[ft.Row(controls=[self.tabla], scroll=ft.ScrollMode.AUTO), self.vacia],
-                              scroll=ft.ScrollMode.AUTO, spacing=8)
-        return ft.Container(content=contenido, height=alto, expand=alto is None, bgcolor=SUPERFICIE,
-                            border=ft.Border.all(1, LINEA), border_radius=4,
-                            padding=ft.Padding.only(bottom=8))
+        self.recuadro = ft.Container(content=self._contenido(estirada=False), height=alto, expand=alto is None,
+                                     bgcolor=SUPERFICIE, border=ft.Border.all(1, LINEA), border_radius=4,
+                                     padding=ft.Padding.only(bottom=8))
+        return self.recuadro
+
+    def estirar(self, estirada: bool) -> None:
+        """Estirada, la tabla ocupa todo el ancho del recuadro; si no, se desplaza a lo ancho."""
+        self.recuadro.content = self._contenido(estirada)
+
+    def _contenido(self, estirada: bool) -> ft.Control:
+        self.tabla.expand = estirada
+        if estirada:
+            # Sin espacio vacío a la derecha; si no entra, las celdas parten el texto en dos líneas
+            return ft.Column(controls=[ft.Row(controls=[self.tabla]), self.vacia], scroll=ft.ScrollMode.AUTO,
+                             spacing=8)
+        # El desplazamiento horizontal envuelve al vertical para que su barra quede siempre al pie del
+        # recuadro: si la tabla no entra a lo ancho, se ve que hay más columnas sin bajar hasta el final.
+        # En Flet una fila con desplazamiento ocupa todo el ancho, así que una tabla angosta deja espacio.
+        filas = ft.Column(controls=[self.tabla, self.vacia], scroll=ft.ScrollMode.AUTO, spacing=8)
+        return ft.Row(controls=[filas], scroll=ft.ScrollMode.ALWAYS, vertical_alignment=ft.CrossAxisAlignment.START)
 
 
 def opciones(pares) -> list[ft.DropdownOption]:
     return [ft.DropdownOption(key=str(clave), text=texto) for clave, texto in pares]
 
 
-def desplegable(etiqueta: str, pares, valor=None, ancho: int | None = None, al_cambiar=None,
-                filtrable: bool = False) -> ft.Dropdown:
-    """Sin ancho fijo ocupa todo el ancho disponible."""
+def desplegable(etiqueta: str, pares, valor=None, ancho: int | None = None, al_cambiar=None) -> ft.Dropdown:
+    """Sin ancho fijo ocupa todo el ancho disponible. Para buscar entre muchas opciones, sumarle un buscador()."""
     return ft.Dropdown(label=etiqueta, options=opciones(pares), value=str(valor) if valor is not None else None,
-                       width=ancho, on_select=al_cambiar, enable_filter=filtrable, editable=filtrable,
-                       menu_height=320)
+                       width=ancho, on_select=al_cambiar, menu_height=320)
+
+
+class Selector(ft.Stack):
+    """Un solo campo para elegir una opción: se despliega al tocarlo y se filtra mientras se escribe.
+
+    La búsqueda toma cada palabra en cualquier orden, sin distinguir tildes, mayúsculas ni signos
+    («tomas herrera» encuentra «Herrera, Tomás»). Enter elige la primera coincidencia.
+
+    Se usa igual que un desplegable: `value` (clave elegida o None), `options` (lista de DropdownOption),
+    `on_select` y `hint_text`. No es un ft.Dropdown porque, en Flet 1.x, cambiar las opciones de un
+    desplegable mientras se escribe en él le quita el foco; el SearchBar arma su lista desde Python sin
+    ese problema. La etiqueta flotante imita la de los demás campos.
+    """
+
+    def __init__(self, etiqueta: str, pares=(), al_cambiar=None):
+        self._value: str | None = None
+        self._options: list[ft.DropdownOption] = opciones(pares)
+        self.on_select = al_cambiar
+        self._barra = ft.SearchBar(
+            bar_hint_text="Escriba para buscar", view_hint_text=f"Buscar {etiqueta.lower()}",
+            bar_leading=ft.Icon(ft.Icons.SEARCH, color=TEXTO_SUAVE, size=20),
+            bar_trailing=[ft.Icon(ft.Icons.ARROW_DROP_DOWN, color=TEXTO_SUAVE)],
+            bar_bgcolor=SUPERFICIE, bar_elevation=0, bar_shape=ft.RoundedRectangleBorder(radius=4),
+            bar_border_side={ft.ControlState.FOCUSED: ft.BorderSide(2, ACENTO),
+                             ft.ControlState.DEFAULT: ft.BorderSide(1, LINEA_FUERTE)},
+            bar_overlay_color=ft.Colors.TRANSPARENT, bar_padding=ft.Padding.symmetric(horizontal=8),
+            bar_text_style=ft.TextStyle(size=16, color=TEXTO),
+            bar_hint_text_style=ft.TextStyle(size=16, color=TEXTO_SUAVE),
+            bar_size_constraints=ft.BoxConstraints(min_height=48, max_height=48),
+            # La lista se abre sobre el campo con su mismo alto, borde y lupa, como un campo con foco
+            view_leading=ft.Icon(ft.Icons.SEARCH, color=ACENTO, size=20),
+            view_trailing=[ft.Icon(ft.Icons.ARROW_DROP_UP, color=ACENTO)],
+            view_header_height=48, view_bar_padding=ft.Padding.symmetric(horizontal=8),
+            view_header_text_style=ft.TextStyle(size=16, color=TEXTO),
+            view_hint_text_style=ft.TextStyle(size=16, color=TEXTO_SUAVE),
+            view_bgcolor=SUPERFICIE, view_elevation=3, view_side=ft.BorderSide(2, ACENTO),
+            view_shape=ft.RoundedRectangleBorder(radius=4), divider_color=LINEA,
+            view_size_constraints=ft.BoxConstraints(max_height=320),
+            on_tap=self._abrir, on_change=self._al_escribir, on_submit=self._al_confirmar,
+            on_tap_outside_view=self._al_salir, on_focus=self._al_enfocar,
+        )
+        self._etiqueta = etiqueta_flotante = ft.Container(
+            content=ft.Text(etiqueta, size=12, color=TEXTO_SUAVE), bgcolor=SUPERFICIE,
+            padding=ft.Padding.symmetric(horizontal=4), left=8, top=0)
+        super().__init__(controls=[ft.Container(content=self._barra, padding=ft.Padding.only(top=8)),
+                                   etiqueta_flotante], height=56)
+
+    # --- interfaz de desplegable ----------------------------------------------
+    @property
+    def value(self) -> str | None:
+        return self._value
+
+    @value.setter
+    def value(self, clave: str | None) -> None:
+        self._value = clave
+        self._barra.value = self._texto(clave)
+
+    @property
+    def options(self) -> list[ft.DropdownOption]:
+        return self._options
+
+    @options.setter
+    def options(self, nuevas: list[ft.DropdownOption]) -> None:
+        self._options = nuevas
+        self._barra.controls = self._items(self._barra.value)
+
+    @property
+    def hint_text(self) -> str | None:
+        return self._barra.bar_hint_text
+
+    @hint_text.setter
+    def hint_text(self, texto: str | None) -> None:
+        self._barra.bar_hint_text = texto or "Escriba para buscar"
+
+    # --- búsqueda ----------------------------------------------------------
+    def coincidencias(self, texto: str | None) -> list[ft.DropdownOption]:
+        """Opciones que corresponden a lo escrito. Con la opción elegida a la vista, se ofrecen todas."""
+        if not texto or texto == self._texto(self._value):
+            return list(self._options)
+        return [o for o in self._options if coincide(texto, o.text)]
+
+    def elegir(self, clave: str | None) -> None:
+        """Elige una opción (o ninguna) y avisa a on_select si cambió."""
+        anterior = self._value
+        self.value = clave
+        if clave != anterior and self.on_select:
+            self.on_select(None)
+
+    def _texto(self, clave: str | None) -> str:
+        return next((o.text for o in self._options if o.key == clave), "")
+
+    def _items(self, texto: str | None) -> list[ft.Control]:
+        encontradas = self.coincidencias(texto)
+        if not encontradas:
+            return [ft.ListTile(title=ft.Text("Sin coincidencias", italic=True, color=TEXTO_SUAVE), dense=True)]
+        return [ft.ListTile(title=ft.Text(o.text, size=14, color=TEXTO), data=o.key, dense=True,
+                            on_click=self._al_elegir, selected=o.key == self._value,
+                            selected_tile_color=ACENTO_CLARO, hover_color=HOVER,
+                            content_padding=ft.Padding.only(left=44, right=12))
+                for o in encontradas]
+
+    # --- eventos -----------------------------------------------------------
+    async def _abrir(self, e) -> None:
+        self._barra.controls = self._items(self._barra.value)
+        self._etiqueta.visible = False   # la lista tapa el campo; la etiqueta asomaría por arriba
+        e.page.update()
+        await self._barra.open_view()
+
+    async def _cerrar(self, e) -> None:
+        self._etiqueta.visible = True
+        await self._barra.close_view(self._texto(self._value))
+        e.page.update()
+
+    def _al_escribir(self, e) -> None:
+        texto = e.data or ""
+        if self._value is not None and texto != self._texto(self._value):
+            # Lo escrito ya no es la opción elegida. No se toca el texto de la barra: cambiarlo
+            # mientras se escribe pisaría lo que el usuario está tipeando.
+            self._value = None
+            if self.on_select:
+                self.on_select(None)
+        self._barra.controls = self._items(texto)
+        e.page.update()
+
+    async def _al_elegir(self, e) -> None:
+        self.elegir(e.control.data)
+        await self._cerrar(e)
+
+    async def _al_confirmar(self, e) -> None:
+        encontradas = self.coincidencias(e.data)
+        if encontradas:
+            self.elegir(encontradas[0].key)
+        await self._cerrar(e)
+
+    async def _al_salir(self, e) -> None:
+        await self._cerrar(e)
+
+    def _al_enfocar(self, e) -> None:
+        # Al cerrar la lista con Escape no hay evento de cierre, pero el foco vuelve a la barra
+        if not self._etiqueta.visible:
+            self._etiqueta.visible = True
+            e.page.update()
+
+
+def selector(etiqueta: str, pares, al_cambiar=None) -> Selector:
+    """Campo para elegir entre muchas opciones buscando por texto (socios, libros)."""
+    return Selector(etiqueta, pares, al_cambiar)
 
 
 def campo(etiqueta: str, valor=None, ancho: int | None = None, **kwargs) -> ft.TextField:
@@ -177,7 +338,7 @@ def numero_o_none(control: ft.TextField, nombre: str) -> float | None:
         raise ErrorNegocio(f"{nombre} debe ser un número") from None
 
 
-def id_seleccionado(control: ft.Dropdown, nombre: str) -> int:
+def id_seleccionado(control: ft.Dropdown | Selector, nombre: str) -> int:
     if not control.value:
         from ..modelo import ErrorNegocio
         raise ErrorNegocio(f"Seleccione {nombre}")
