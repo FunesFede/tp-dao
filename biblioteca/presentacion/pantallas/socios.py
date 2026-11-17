@@ -13,8 +13,8 @@ class PantallaSocios:
     def __init__(self, app):
         self.app = app
         self.filas: dict[int, dict] = {}
-        self.busqueda = campo("Buscar por DNI, apellido o nombre", ancho=340, on_submit=lambda e: self.refrescar(),
-                              prefix_icon=ft.Icons.SEARCH)
+        self.busqueda = campo("Buscar por DNI, apellido o nombre", ancho=340, prefix_icon=ft.Icons.SEARCH,
+                              on_change=lambda e: self.refrescar())   # filtra mientras se escribe
         self.tabla = Tabla([("DNI", False), ("Apellido y nombre", False), ("Sede de alta", False),
                             ("Email", False), ("Teléfono",
                                                False), ("Préstamos abiertos", True), ("Deuda", True),

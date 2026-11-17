@@ -25,7 +25,7 @@ class PantallaPrestamos:
         self.filtro = desplegable("Mostrar", [(k, v[0]) for k, v in FILTROS.items()], "abiertos", ancho=270,
                                   al_cambiar=lambda e: self.refrescar())
         self.busqueda = campo("Buscar socio, DNI, libro o código", ancho=360, prefix_icon=ft.Icons.SEARCH,
-                              on_submit=lambda e: self.refrescar())
+                              on_change=lambda e: self.refrescar())   # filtra mientras se escribe
         self.tabla = Tabla([("#", True), ("Tipo", False), ("Socio", False), ("Libro", False), ("Código", False),
                             ("Origen", False), ("Retira en", False), ("Estado", False), ("Vence", False),
                             ("Atraso (días)", True)], self.al_seleccionar)

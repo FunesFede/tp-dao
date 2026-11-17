@@ -76,6 +76,7 @@ class PantallaRemitos:
             return
         self.panel_detalle.visible = not self.panel_detalle.visible if visible is None else visible
         self.btn_detalle.icon = ft.Icons.CHEVRON_RIGHT if self.panel_detalle.visible else ft.Icons.CHEVRON_LEFT
+        self.tabla.estirar(not self.panel_detalle.visible)   # sin el detalle, la tabla usa todo el ancho
         self.btn_detalle.tooltip = "Ocultar detalle" if self.panel_detalle.visible else "Mostrar detalle"
 
     def al_seleccionar(self, remito_id: int | None) -> None:

@@ -120,14 +120,26 @@ class Tabla:
             self.al_seleccionar(self.seleccionado)
 
     def build(self, alto: int | None = None) -> ft.Control:
+        self.recuadro = ft.Container(content=self._contenido(estirada=False), height=alto, expand=alto is None,
+                                     bgcolor=SUPERFICIE, border=ft.Border.all(1, LINEA), border_radius=4,
+                                     padding=ft.Padding.only(bottom=8))
+        return self.recuadro
+
+    def estirar(self, estirada: bool) -> None:
+        """Estirada, la tabla ocupa todo el ancho del recuadro; si no, se desplaza a lo ancho."""
+        self.recuadro.content = self._contenido(estirada)
+
+    def _contenido(self, estirada: bool) -> ft.Control:
+        self.tabla.expand = estirada
+        if estirada:
+            # Sin espacio vacío a la derecha; si no entra, las celdas parten el texto en dos líneas
+            return ft.Column(controls=[ft.Row(controls=[self.tabla]), self.vacia], scroll=ft.ScrollMode.AUTO,
+                             spacing=8)
         # El desplazamiento horizontal envuelve al vertical para que su barra quede siempre al pie del
-        # recuadro: si la tabla no entra a lo ancho, se ve que hay más columnas sin bajar hasta el final
+        # recuadro: si la tabla no entra a lo ancho, se ve que hay más columnas sin bajar hasta el final.
+        # En Flet una fila con desplazamiento ocupa todo el ancho, así que una tabla angosta deja espacio.
         filas = ft.Column(controls=[self.tabla, self.vacia], scroll=ft.ScrollMode.AUTO, spacing=8)
-        contenido = ft.Row(controls=[filas], scroll=ft.ScrollMode.ALWAYS,
-                           vertical_alignment=ft.CrossAxisAlignment.START)
-        return ft.Container(content=contenido, height=alto, expand=alto is None, bgcolor=SUPERFICIE,
-                            border=ft.Border.all(1, LINEA), border_radius=4,
-                            padding=ft.Padding.only(bottom=8))
+        return ft.Row(controls=[filas], scroll=ft.ScrollMode.ALWAYS, vertical_alignment=ft.CrossAxisAlignment.START)
 
 
 def opciones(pares) -> list[ft.DropdownOption]:
@@ -158,6 +170,7 @@ class Selector(ft.Stack):
         self.on_select = al_cambiar
         self._barra = ft.SearchBar(
             bar_hint_text="Escriba para buscar", view_hint_text=f"Buscar {etiqueta.lower()}",
+            bar_leading=ft.Icon(ft.Icons.SEARCH, color=TEXTO_SUAVE, size=20),
             bar_trailing=[ft.Icon(ft.Icons.ARROW_DROP_DOWN, color=TEXTO_SUAVE)],
             bar_bgcolor=SUPERFICIE, bar_elevation=0, bar_shape=ft.RoundedRectangleBorder(radius=4),
             bar_border_side={ft.ControlState.FOCUSED: ft.BorderSide(2, ACENTO),
@@ -166,12 +179,19 @@ class Selector(ft.Stack):
             bar_text_style=ft.TextStyle(size=16, color=TEXTO),
             bar_hint_text_style=ft.TextStyle(size=16, color=TEXTO_SUAVE),
             bar_size_constraints=ft.BoxConstraints(min_height=48, max_height=48),
-            view_bgcolor=SUPERFICIE, view_elevation=4, view_shape=ft.RoundedRectangleBorder(radius=4),
+            # La lista se abre sobre el campo con su mismo alto, borde y lupa, como un campo con foco
+            view_leading=ft.Icon(ft.Icons.SEARCH, color=ACENTO, size=20),
+            view_trailing=[ft.Icon(ft.Icons.ARROW_DROP_UP, color=ACENTO)],
+            view_header_height=48, view_bar_padding=ft.Padding.symmetric(horizontal=8),
+            view_header_text_style=ft.TextStyle(size=16, color=TEXTO),
+            view_hint_text_style=ft.TextStyle(size=16, color=TEXTO_SUAVE),
+            view_bgcolor=SUPERFICIE, view_elevation=3, view_side=ft.BorderSide(2, ACENTO),
+            view_shape=ft.RoundedRectangleBorder(radius=4), divider_color=LINEA,
             view_size_constraints=ft.BoxConstraints(max_height=320),
             on_tap=self._abrir, on_change=self._al_escribir, on_submit=self._al_confirmar,
             on_tap_outside_view=self._al_salir,
         )
-        etiqueta_flotante = ft.Container(
+        self._etiqueta = etiqueta_flotante = ft.Container(
             content=ft.Text(etiqueta, size=12, color=TEXTO_SUAVE), bgcolor=SUPERFICIE,
             padding=ft.Padding.symmetric(horizontal=4), left=8, top=0)
         super().__init__(controls=[ft.Container(content=self._barra, padding=ft.Padding.only(top=8)),
@@ -225,14 +245,23 @@ class Selector(ft.Stack):
         encontradas = self.coincidencias(texto)
         if not encontradas:
             return [ft.ListTile(title=ft.Text("Sin coincidencias", italic=True, color=TEXTO_SUAVE), dense=True)]
-        return [ft.ListTile(title=ft.Text(o.text, size=14), data=o.key, dense=True, on_click=self._al_elegir,
-                            selected=o.key == self._value, selected_tile_color=ACENTO_CLARO)
+        return [ft.ListTile(title=ft.Text(o.text, size=14, color=TEXTO), data=o.key, dense=True,
+                            on_click=self._al_elegir, selected=o.key == self._value,
+                            selected_tile_color=ACENTO_CLARO, hover_color=HOVER,
+                            content_padding=ft.Padding.only(left=44, right=12))
                 for o in encontradas]
 
     # --- eventos -----------------------------------------------------------
     async def _abrir(self, e) -> None:
         self._barra.controls = self._items(self._barra.value)
+        self._etiqueta.visible = False   # la lista tapa el campo; la etiqueta asomaría por arriba
+        e.page.update()
         await self._barra.open_view()
+
+    async def _cerrar(self, e) -> None:
+        self._etiqueta.visible = True
+        await self._barra.close_view(self._texto(self._value))
+        e.page.update()
 
     def _al_escribir(self, e) -> None:
         texto = e.data or ""
@@ -247,18 +276,16 @@ class Selector(ft.Stack):
 
     async def _al_elegir(self, e) -> None:
         self.elegir(e.control.data)
-        await self._barra.close_view(self._texto(self._value))
-        e.page.update()
+        await self._cerrar(e)
 
     async def _al_confirmar(self, e) -> None:
         encontradas = self.coincidencias(e.data)
         if encontradas:
             self.elegir(encontradas[0].key)
-        await self._barra.close_view(self._texto(self._value))
-        e.page.update()
+        await self._cerrar(e)
 
     async def _al_salir(self, e) -> None:
-        await self._barra.close_view(self._texto(self._value))
+        await self._cerrar(e)
 
 
 def selector(etiqueta: str, pares, al_cambiar=None) -> Selector:

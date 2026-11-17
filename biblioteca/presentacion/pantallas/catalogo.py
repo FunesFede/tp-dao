@@ -14,7 +14,7 @@ class PantallaCatalogo:
         self.libros: dict[int, dict] = {}
         self.ejemplares: dict[int, dict] = {}
         self.busqueda = campo("Buscar por título, autor o ISBN", ancho=340, prefix_icon=ft.Icons.SEARCH,
-                              on_submit=lambda e: self.refrescar())
+                              on_change=lambda e: self.refrescar())   # filtra mientras se escribe
         self.tabla_libros = Tabla([("Título", False), ("Autor", False), ("ISBN", False), ("Año", True),
                                    ("Tipo", False), ("Ejemplares", True), ("Disponibles", True),
                                    ("De baja", True)],
