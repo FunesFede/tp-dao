@@ -88,10 +88,23 @@ Regla de capas: la interfaz solo llama a los servicios; los servicios usan el mo
 - No se inician préstamos, reservas ni envíos hacia o desde una sede dada de baja. Una sede no se da de baja mientras tenga envíos en curso, préstamos abiertos que salen de ella o se retiran en ella, reservas vigentes, ejemplares de otras sedes en su local o ejemplares propios en otras sedes.
 - Dar de baja un ejemplar que espera en un remito de retorno lo quita del remito (si el remito queda vacío, se anula).
 - Préstamo interbibliotecario: el ejemplar se aparta y se agrega al remito en preparación entre las dos sedes (o se crea uno).
+- Si un préstamo interbibliotecario llega y el socio no lo retira en 30 días, se cancela al procesar los vencimientos y el ejemplar vuelve a su sede en un remito de retorno. *Pendiente de aprobación del equipo: ver «Decisiones pendientes (Juan)».*
 - Recepción: correcto o dañado → el préstamo queda listo para retirar; faltante o destruido → se cancela, y el ejemplar queda extraviado o de baja.
 - Si un ejemplar se devuelve en una sede que no es la suya, se genera solo un remito de retorno.
 - Reservas: por título, solo en sedes que tienen ejemplares de ese título, y no puede reservar un socio que ya tiene el máximo de préstamos abiertos. Cuando se libera un ejemplar se aparta para la reserva más antigua y el socio tiene 3 días para retirarlo; pasado ese plazo ya no puede retirarlo y la reserva expira. Si se anula el remito de un préstamo interbibliotecario, el ejemplar liberado también atiende las reservas pendientes.
-- Al abrir la aplicación se marcan los préstamos vencidos y expiran las reservas no retiradas.
+- Al abrir la aplicación se marcan los préstamos vencidos, expiran las reservas no retiradas y se cancelan los préstamos interbibliotecarios que no se retiraron a tiempo.
+
+## Decisiones pendientes (Juan)
+
+Dudas que surgieron al revisar el TP, con la propuesta de cada una. Quedan acá hasta que el equipo las apruebe o las descarte.
+
+1. **Plazo para retirar un préstamo interbibliotecario.** Cuando el ejemplar llegaba a la sede de destino, el préstamo quedaba «listo para retirar» sin fecha límite: si el socio no lo retiraba, el ejemplar quedaba apartado para siempre y le ocupaba uno de sus 3 préstamos abiertos. **Implementado, pendiente de aprobación:** 30 días desde la recepción del remito (`DIAS_PARA_RETIRAR_INTER` en `modelo/prestamo.py`); pasado ese plazo el préstamo se cancela al procesar los vencimientos y el ejemplar vuelve a su sede.
+2. **Reservas de un socio que queda inhabilitado.** Si un socio con una reserva pendiente queda suspendido o inhabilitado, al liberarse un ejemplar igual se le aparta y queda retenido 3 días aunque no pueda retirarlo. **Propuesta:** al asignar reservas, saltear a los socios inhabilitados y pasar a la siguiente reserva (la suya sigue pendiente para cuando vuelva a estar habilitado).
+3. **Multas impagas.** Hoy una multa sin pagar no impide pedir préstamos ni reservar: solo bloquean la suspensión y la inhabilitación manual. **Propuesta:** que un socio con multas impagas no pueda iniciar préstamos ni reservas hasta pagarlas.
+
+### Implementaciones a futuro
+
+- **Baja de socios y de libros.** Hoy un socio solo se puede inhabilitar y un libro no se puede quitar del catálogo (solo se dan de baja sus ejemplares). Se propone una baja lógica (marca de baja con fecha, como las sedes), que conserve el historial de préstamos y sanciones y saque al socio o al libro de los listados y formularios.
 
 ## Reportes
 
