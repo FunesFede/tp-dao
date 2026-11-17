@@ -1,18 +1,13 @@
 from __future__ import annotations
 
-from datetime import datetime
-
 import flet as ft
 
-from ...datos.conexion import RAIZ_PROYECTO
 from ...reportes.estructura import Reporte, formatear
 from ...reportes.exportador_csv import exportar_csv
 from ...reportes.exportador_pdf import exportar_pdf
 from ...reportes.graficos import grafico_png
 from ..componentes import Tabla, boton, titulo_pantalla
 from ..estilo import ACENTO, ACENTO_CLARO, encabezado
-
-CARPETA_EXPORTES = RAIZ_PROYECTO / "exportes"
 
 
 class PantallaReportes:
@@ -76,7 +71,7 @@ class PantallaReportes:
         self.contenedor_tabla.controls = [tabla.build()]
 
     def _ruta(self, extension: str):
-        return CARPETA_EXPORTES / f"{self.clave}_{datetime.now():%Y%m%d_%H%M%S}.{extension}"
+        return self.app.servicios.reportes.ruta_exportacion(self.clave, extension)
 
     def exportar_pdf(self, e) -> None:
         self.app.ejecutar(lambda: f"PDF guardado en {exportar_pdf(self.reporte, self._ruta('pdf'))}")

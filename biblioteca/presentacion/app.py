@@ -54,7 +54,6 @@ class AplicacionBiblioteca(AplicacionBase):
 
 
 def main(page: ft.Page) -> None:
-    from ..datos.conexion import inicializar_base
     page.title = f"{NOMBRE_RED} · Préstamos interbibliotecarios"
     aplicar_estilo(page)
     page.padding = 0
@@ -63,8 +62,8 @@ def main(page: ft.Page) -> None:
     page.window.min_width = 1100
     page.window.min_height = 680
 
-    inicializar_base()
     servicios = Servicios()
+    servicios.preparar_base()
     servicios.procesar_vencimientos()
     from .ingreso import abrir_ingreso   # import local: ingreso importa esta clase
     abrir_ingreso(page, servicios)

@@ -124,7 +124,7 @@ def test_alta_de_libro_y_ejemplar(app):
 
 
 def test_reportes_se_exportan(app, tmp_path, monkeypatch):
-    from biblioteca.presentacion.pantallas import reportes
+    from biblioteca.servicios import reportes
     monkeypatch.setattr(reportes, "CARPETA_EXPORTES", tmp_path)
     aplicacion, pagina = app
     p = pantalla(aplicacion, "reportes")

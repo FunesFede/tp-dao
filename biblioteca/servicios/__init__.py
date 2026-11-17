@@ -1,4 +1,5 @@
 """Casos de uso. La interfaz solo habla con estas clases."""
+from ..datos.conexion import inicializar_base
 from .base import Reloj, RelojManual
 from .catalogo import ServicioCatalogo
 from .consulta_socio import ServicioConsultaSocio
@@ -21,6 +22,11 @@ class Servicios:
         self.reservas = ServicioReservas(self.reloj)
         self.reportes = ServicioReportes(self.reloj)
         self.consulta_socio = ServicioConsultaSocio(self.reloj)
+
+    @staticmethod
+    def preparar_base() -> None:
+        """Crea las tablas si la base todavía no existe. Se llama al abrir la aplicación."""
+        inicializar_base()
 
     def procesar_vencimientos(self) -> str:
         """Marca préstamos vencidos, expira reservas y cancela préstamos no retirados. Se llama al abrir la app."""

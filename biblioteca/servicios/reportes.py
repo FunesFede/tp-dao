@@ -1,10 +1,14 @@
 """Reportes de gestión. SQL con agregaciones y joins; devuelve objetos Reporte."""
 from __future__ import annotations
 
+from pathlib import Path
+
+from ..datos.conexion import RAIZ_PROYECTO
 from ..datos.conversiones import fecha_a_texto
 from ..reportes.estructura import Grafico, Reporte
 from .base import ServicioBase
 
+CARPETA_EXPORTES = RAIZ_PROYECTO / "exportes"
 ABIERTOS = "('SOLICITADO', 'EN_TRANSITO', 'LISTO_PARA_RETIRO', 'ACTIVO', 'VENCIDO')"
 
 
@@ -24,6 +28,10 @@ class ServicioReportes(ServicioBase):
             raise ValueError(f"Reporte desconocido: {clave}")
         with self._transaccion() as r:
             return metodo(r.conexion)
+
+    def ruta_exportacion(self, clave: str, extension: str) -> Path:
+        """Archivo donde se guarda un reporte exportado: exportes/<clave>_<fecha y hora>.<extension>."""
+        return CARPETA_EXPORTES / f"{clave}_{self.ahora():%Y%m%d_%H%M%S}.{extension}"
 
     def _nuevo(self, clave: str, descripcion: str, columnas: list[str], filas) -> Reporte:
         return Reporte(clave=clave, titulo=self.CATALOGO[clave], descripcion=descripcion,
