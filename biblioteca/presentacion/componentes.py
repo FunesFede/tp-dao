@@ -7,8 +7,8 @@ import flet as ft
 
 from ..modelo.texto import coincide
 from ..reportes.estructura import formatear
-from .estilo import (HOVER, ACENTO_CLARO, LINEA, SUPERFICIE, SUPERFICIE_ALTA, FUENTE_SUBTITULO, TEXTO, TEXTO_SUAVE,
-                     encabezado)
+from .estilo import (ACENTO, ACENTO_CLARO, FUENTE_SUBTITULO, HOVER, LINEA, LINEA_FUERTE, SUPERFICIE, SUPERFICIE_ALTA,
+                     TEXTO, TEXTO_SUAVE, encabezado)
 
 # Colores (fondo, letra) de las "pastillas" de estado
 COLORES_ESTADO = {
@@ -140,38 +140,130 @@ def desplegable(etiqueta: str, pares, valor=None, ancho: int | None = None, al_c
                        width=ancho, on_select=al_cambiar, menu_height=320)
 
 
-def buscador(desplegable: ft.Dropdown, etiqueta: str = "Buscar", ancho: int = 200) -> ft.TextField:
-    """Campo que acota las opciones del desplegable mientras se escribe.
+class Selector(ft.Stack):
+    """Un solo campo para elegir una opción: se despliega al tocarlo y se filtra mientras se escribe.
 
-    Busca cada palabra en cualquier orden, sin distinguir tildes, mayúsculas ni signos («tomas herrera»
-    encuentra «Herrera, Tomás»). Si queda una sola opción, la elige. Va en un campo aparte porque el filtro
-    del desplegable de Flet compara el texto tal cual, y cambiarle las opciones mientras se escribe en él
-    le quita el foco.
+    La búsqueda toma cada palabra en cualquier orden, sin distinguir tildes, mayúsculas ni signos
+    («tomas herrera» encuentra «Herrera, Tomás»). Enter elige la primera coincidencia.
 
-    Las pantallas pueden cargar opciones nuevas (desplegable.options = ...): si las opciones actuales no
-    son las que dejó el último filtro, se toman como la lista completa.
+    Se usa igual que un desplegable: `value` (clave elegida o None), `options` (lista de DropdownOption),
+    `on_select` y `hint_text`. No es un ft.Dropdown porque, en Flet 1.x, cambiar las opciones de un
+    desplegable mientras se escribe en él le quita el foco; el SearchBar arma su lista desde Python sin
+    ese problema. La etiqueta flotante imita la de los demás campos.
     """
-    estado = {"todas": desplegable.options, "mostradas": desplegable.options}
 
-    def filtrar(e) -> None:
-        if desplegable.options is not estado["mostradas"]:
-            estado["todas"] = desplegable.options
-        visibles = [o for o in estado["todas"] if coincide(campo_busqueda.value, o.text)]
-        desplegable.options = estado["mostradas"] = visibles
-        claves = [o.key for o in visibles]
-        anterior = desplegable.value
-        if len(claves) == 1:
-            desplegable.value = claves[0]
-        elif desplegable.value not in claves:
-            desplegable.value = None
-        if desplegable.value != anterior and desplegable.on_select:
-            desplegable.on_select(None)
-        if e is not None:
-            e.page.update()
+    def __init__(self, etiqueta: str, pares=(), al_cambiar=None):
+        self._value: str | None = None
+        self._options: list[ft.DropdownOption] = opciones(pares)
+        self.on_select = al_cambiar
+        self._barra = ft.SearchBar(
+            bar_hint_text="Escriba para buscar", view_hint_text=f"Buscar {etiqueta.lower()}",
+            bar_trailing=[ft.Icon(ft.Icons.ARROW_DROP_DOWN, color=TEXTO_SUAVE)],
+            bar_bgcolor=SUPERFICIE, bar_elevation=0, bar_shape=ft.RoundedRectangleBorder(radius=4),
+            bar_border_side={ft.ControlState.FOCUSED: ft.BorderSide(2, ACENTO),
+                             ft.ControlState.DEFAULT: ft.BorderSide(1, LINEA_FUERTE)},
+            bar_overlay_color=ft.Colors.TRANSPARENT, bar_padding=ft.Padding.symmetric(horizontal=8),
+            bar_text_style=ft.TextStyle(size=16, color=TEXTO),
+            bar_hint_text_style=ft.TextStyle(size=16, color=TEXTO_SUAVE),
+            bar_size_constraints=ft.BoxConstraints(min_height=48, max_height=48),
+            view_bgcolor=SUPERFICIE, view_elevation=4, view_shape=ft.RoundedRectangleBorder(radius=4),
+            view_size_constraints=ft.BoxConstraints(max_height=320),
+            on_tap=self._abrir, on_change=self._al_escribir, on_submit=self._al_confirmar,
+            on_tap_outside_view=self._al_salir,
+        )
+        etiqueta_flotante = ft.Container(
+            content=ft.Text(etiqueta, size=12, color=TEXTO_SUAVE), bgcolor=SUPERFICIE,
+            padding=ft.Padding.symmetric(horizontal=4), left=8, top=0)
+        super().__init__(controls=[ft.Container(content=self._barra, padding=ft.Padding.only(top=8)),
+                                   etiqueta_flotante], height=56)
 
-    campo_busqueda = ft.TextField(label=etiqueta, width=ancho, dense=True, prefix_icon=ft.Icons.SEARCH,
-                                  on_change=filtrar)
-    return campo_busqueda
+    # --- interfaz de desplegable ----------------------------------------------
+    @property
+    def value(self) -> str | None:
+        return self._value
+
+    @value.setter
+    def value(self, clave: str | None) -> None:
+        self._value = clave
+        self._barra.value = self._texto(clave)
+
+    @property
+    def options(self) -> list[ft.DropdownOption]:
+        return self._options
+
+    @options.setter
+    def options(self, nuevas: list[ft.DropdownOption]) -> None:
+        self._options = nuevas
+        self._barra.controls = self._items(self._barra.value)
+
+    @property
+    def hint_text(self) -> str | None:
+        return self._barra.bar_hint_text
+
+    @hint_text.setter
+    def hint_text(self, texto: str | None) -> None:
+        self._barra.bar_hint_text = texto or "Escriba para buscar"
+
+    # --- búsqueda ----------------------------------------------------------
+    def coincidencias(self, texto: str | None) -> list[ft.DropdownOption]:
+        """Opciones que corresponden a lo escrito. Con la opción elegida a la vista, se ofrecen todas."""
+        if not texto or texto == self._texto(self._value):
+            return list(self._options)
+        return [o for o in self._options if coincide(texto, o.text)]
+
+    def elegir(self, clave: str | None) -> None:
+        """Elige una opción (o ninguna) y avisa a on_select si cambió."""
+        anterior = self._value
+        self.value = clave
+        if clave != anterior and self.on_select:
+            self.on_select(None)
+
+    def _texto(self, clave: str | None) -> str:
+        return next((o.text for o in self._options if o.key == clave), "")
+
+    def _items(self, texto: str | None) -> list[ft.Control]:
+        encontradas = self.coincidencias(texto)
+        if not encontradas:
+            return [ft.ListTile(title=ft.Text("Sin coincidencias", italic=True, color=TEXTO_SUAVE), dense=True)]
+        return [ft.ListTile(title=ft.Text(o.text, size=14), data=o.key, dense=True, on_click=self._al_elegir,
+                            selected=o.key == self._value, selected_tile_color=ACENTO_CLARO)
+                for o in encontradas]
+
+    # --- eventos -----------------------------------------------------------
+    async def _abrir(self, e) -> None:
+        self._barra.controls = self._items(self._barra.value)
+        await self._barra.open_view()
+
+    def _al_escribir(self, e) -> None:
+        texto = e.data or ""
+        if self._value is not None and texto != self._texto(self._value):
+            # Lo escrito ya no es la opción elegida. No se toca el texto de la barra: cambiarlo
+            # mientras se escribe pisaría lo que el usuario está tipeando.
+            self._value = None
+            if self.on_select:
+                self.on_select(None)
+        self._barra.controls = self._items(texto)
+        e.page.update()
+
+    async def _al_elegir(self, e) -> None:
+        self.elegir(e.control.data)
+        await self._barra.close_view(self._texto(self._value))
+        e.page.update()
+
+    async def _al_confirmar(self, e) -> None:
+        encontradas = self.coincidencias(e.data)
+        if encontradas:
+            self.elegir(encontradas[0].key)
+        await self._barra.close_view(self._texto(self._value))
+        e.page.update()
+
+    async def _al_salir(self, e) -> None:
+        await self._barra.close_view(self._texto(self._value))
+
+
+def selector(etiqueta: str, pares, al_cambiar=None) -> Selector:
+    """Campo para elegir entre muchas opciones buscando por texto (socios, libros)."""
+    return Selector(etiqueta, pares, al_cambiar)
 
 
 def campo(etiqueta: str, valor=None, ancho: int | None = None, **kwargs) -> ft.TextField:
@@ -213,7 +305,7 @@ def numero_o_none(control: ft.TextField, nombre: str) -> float | None:
         raise ErrorNegocio(f"{nombre} debe ser un número") from None
 
 
-def id_seleccionado(control: ft.Dropdown, nombre: str) -> int:
+def id_seleccionado(control: ft.Dropdown | Selector, nombre: str) -> int:
     if not control.value:
         from ..modelo import ErrorNegocio
         raise ErrorNegocio(f"Seleccione {nombre}")
