@@ -189,7 +189,7 @@ class Selector(ft.Stack):
             view_shape=ft.RoundedRectangleBorder(radius=4), divider_color=LINEA,
             view_size_constraints=ft.BoxConstraints(max_height=320),
             on_tap=self._abrir, on_change=self._al_escribir, on_submit=self._al_confirmar,
-            on_tap_outside_view=self._al_salir,
+            on_tap_outside_view=self._al_salir, on_focus=self._al_enfocar,
         )
         self._etiqueta = etiqueta_flotante = ft.Container(
             content=ft.Text(etiqueta, size=12, color=TEXTO_SUAVE), bgcolor=SUPERFICIE,
@@ -286,6 +286,12 @@ class Selector(ft.Stack):
 
     async def _al_salir(self, e) -> None:
         await self._cerrar(e)
+
+    def _al_enfocar(self, e) -> None:
+        # Al cerrar la lista con Escape no hay evento de cierre, pero el foco vuelve a la barra
+        if not self._etiqueta.visible:
+            self._etiqueta.visible = True
+            e.page.update()
 
 
 def selector(etiqueta: str, pares, al_cambiar=None) -> Selector:

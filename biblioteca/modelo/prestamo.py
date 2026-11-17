@@ -27,7 +27,7 @@ class EstadoPrestamo:
 DIAS_PLAZO = {TipoPrestamo.LOCAL: 14, TipoPrestamo.INTER: 21}
 MAX_PRESTAMOS_ABIERTOS = 3
 # Días que tiene el socio para retirar un préstamo interbibliotecario que ya llegó; después se cancela.
-# Propuesta pendiente de aprobación del equipo (README, «Decisiones pendientes (Juan)»).
+# Propuesta pendiente de aprobación del equipo (README, «Decisiones pendientes del equipo»).
 DIAS_PARA_RETIRAR_INTER = 30
 
 
