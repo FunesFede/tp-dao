@@ -23,7 +23,9 @@ class Servicios:
         self.consulta_socio = ServicioConsultaSocio(self.reloj)
 
     def procesar_vencimientos(self) -> str:
-        """Marca préstamos vencidos y expira reservas no retiradas. Se llama al abrir la aplicación."""
+        """Marca préstamos vencidos, expira reservas y cancela préstamos no retirados. Se llama al abrir la app."""
         vencidos = self.prestamos.actualizar_vencimientos()
         expiradas = self.reservas.expirar_vencidas()
-        return f"{vencidos} préstamo(s) pasaron a vencidos y {expiradas} reserva(s) expiraron."
+        no_retirados = self.prestamos.cancelar_no_retirados()
+        return (f"{vencidos} préstamo(s) pasaron a vencidos, {expiradas} reserva(s) expiraron y "
+                f"{no_retirados} préstamo(s) interbibliotecario(s) se cancelaron por no retirarse a tiempo.")

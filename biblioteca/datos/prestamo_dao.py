@@ -41,6 +41,18 @@ class PrestamoDAO:
         """, (fecha_a_texto(hoy),)).fetchall()
         return [self._mapear(f) for f in filas]
 
+    def listar_listos_recibidos_antes_de(self, limite: date) -> list[Prestamo]:
+        """Préstamos listos para retirar cuyo remito llegó a la sede de retiro antes de `limite`."""
+        filas = self.cx.execute("""
+            SELECT DISTINCT p.* FROM prestamo p
+            JOIN remito_detalle d ON d.prestamo_id = p.id
+            JOIN remito_movimiento m ON m.remito_id = d.remito_id
+            WHERE p.estado = 'LISTO_PARA_RETIRO'
+              AND m.estado_nuevo IN ('RECIBIDO', 'RECIBIDO_CON_INCIDENCIA')
+              AND date(m.fecha_hora) < ?
+        """, (fecha_a_texto(limite),)).fetchall()
+        return [self._mapear(f) for f in filas]
+
     def listar_resumen(self, estados: tuple[str, ...] | None = None, texto: str = "",
                        socio_id: int | None = None, prestamo_id: int | None = None) -> list[dict]:
         """Préstamos con socio, libro y sedes. `socio_id` y `prestamo_id` limitan el listado."""
