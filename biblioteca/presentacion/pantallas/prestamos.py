@@ -4,8 +4,8 @@ import flet as ft
 
 from ...modelo import DIAS_PLAZO, EstadoFisico, EstadoPrestamo, TipoPrestamo
 from ...reportes.estructura import formatear
-from ..componentes import (en_fila, Tabla, boton, campo, desplegable, etiqueta_estado, id_seleccionado, opciones,
-                           pastilla, texto_o_none, titulo_pantalla)
+from ..componentes import (buscador, en_fila, Tabla, boton, campo, desplegable, etiqueta_estado, id_seleccionado,
+                           opciones, pastilla, texto_o_none, titulo_pantalla)
 from ..estilo import AVISO, ERROR, EXITO
 
 FILTROS = {
@@ -74,8 +74,8 @@ class PantallaPrestamos:
                   for f in servicios.socios.listar()]
         libros = [(f["id"], f"{f['titulo']} ({f['autor']})") for f in servicios.catalogo.listar_libros()]
 
-        socio = desplegable("Socio", socios, filtrable=True)
-        libro = desplegable("Libro", libros, filtrable=True)
+        socio = desplegable("Socio", socios)
+        libro = desplegable("Libro", libros)
         origen = desplegable("Sede de origen", [])
         ejemplar = desplegable("Ejemplar disponible", [])
         destino = desplegable("Sede donde lo retira", sedes)
@@ -131,7 +131,9 @@ class PantallaPrestamos:
                 return f"Préstamo #{prestamo.id} registrado. Vence el {prestamo.fecha_vencimiento:%d/%m/%Y}."
             return f"Préstamo interbibliotecario #{prestamo.id} registrado. El ejemplar se agregó a un remito."
 
-        self.app.dialogo("Nuevo préstamo", [socio, libro, en_fila(origen, destino), ejemplar, info],
+        self.app.dialogo("Nuevo préstamo", [en_fila(buscador(socio, "Buscar socio"), socio),
+                                            en_fila(buscador(libro, "Buscar libro"), libro),
+                                            en_fila(origen, destino), ejemplar, info],
                          guardar, texto_aceptar="Registrar préstamo", ancho=620, al_terminar=self.refrescar)
 
     # --- acciones sobre el seleccionado -------------------------------------

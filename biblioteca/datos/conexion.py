@@ -8,6 +8,8 @@ from __future__ import annotations
 import sqlite3
 from pathlib import Path
 
+from ..modelo.texto import coincide
+
 RAIZ_PROYECTO = Path(__file__).resolve().parents[2]
 RUTA_PREDETERMINADA = RAIZ_PROYECTO / "biblioteca.db"
 RUTA_SCHEMA = Path(__file__).resolve().parent / "schema.sql"
@@ -30,6 +32,8 @@ def obtener_conexion() -> sqlite3.Connection:
     conexion.row_factory = sqlite3.Row
     # SQLite ignora las claves foráneas si no se activan en cada conexión
     conexion.execute("PRAGMA foreign_keys = ON")
+    # LIKE distingue tildes; las búsquedas usan coincide(busqueda, texto)
+    conexion.create_function("coincide", 2, coincide, deterministic=True)
     return conexion
 
 

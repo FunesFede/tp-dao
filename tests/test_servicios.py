@@ -318,3 +318,10 @@ def test_seed_y_reportes(base, tmp_path):
     disponibilidad = s.reportes.generar("disponibilidad")
     for fila in disponibilidad.filas:      # cada ejemplar cuenta en una sola columna
         assert fila[2] == sum(fila[3:7])
+
+
+def test_las_busquedas_ignoran_tildes_y_orden(s, red):
+    assert [f["socio"].dni for f in s.socios.listar("ana perez")] == [red["ana"].dni]   # «Pérez, Ana»
+    assert [f["isbn"] for f in s.catalogo.listar_libros("rayuela cortazar")] == [red["libro"].isbn]
+    s.prestamos.registrar(red["luis"].id, red["e_centro"].id, red["centro"].id, red["centro"].id)
+    assert len(s.prestamos.listar(texto="gomez rayuela")) == 1

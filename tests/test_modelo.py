@@ -186,3 +186,13 @@ def test_reparar_solo_mejora_el_estado_fisico():
     e.prestar()
     with pytest.raises(ErrorNegocio):                  # prestado: no está en la biblioteca para repararlo
         e.reparar("BUENO")
+
+
+def test_busqueda_sin_tildes_mayusculas_ni_signos():
+    from biblioteca.modelo.texto import coincide, normalizar
+    assert normalizar("Herrera, Tomás · DNI 36.543.210") == "herrera tomas dni 36 543 210"
+    assert normalizar("Núñez") == "nunez"
+    assert coincide("tomas herrera", "Herrera, Tomás")      # cualquier orden
+    assert coincide("TOMÁS", "Herrera, Tomas")
+    assert coincide("", "lo que sea")
+    assert not coincide("tomas perez", "Herrera, Tomás")    # tienen que estar todas las palabras

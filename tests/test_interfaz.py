@@ -47,7 +47,7 @@ def test_nuevo_prestamo_interbibliotecario_desde_el_formulario(app):
     aplicacion, pagina = app
     p = pantalla(aplicacion, "prestamos")
     p.nuevo(None)
-    socio, libro, origen, destino, ejemplar = pagina.campos()
+    _, socio, _, libro, origen, destino, ejemplar = pagina.campos()
     elegir(socio, "Medina")
     elegir(libro, "El Aleph")
     elegir(origen, "Sede Norte")
@@ -61,7 +61,7 @@ def test_prestamo_a_socio_suspendido_muestra_el_error(app):
     aplicacion, pagina = app
     p = pantalla(aplicacion, "prestamos")
     p.nuevo(None)
-    socio, libro, origen, destino, ejemplar = pagina.campos()
+    _, socio, _, libro, origen, destino, ejemplar = pagina.campos()
     elegir(socio, "Ruiz")
     elegir(libro, "El Aleph")
     elegir(origen, "Sede Norte")
@@ -154,7 +154,7 @@ def test_nuevo_prestamo_solo_ofrece_sedes_con_ejemplares(app):
     aplicacion.servicios.catalogo.crear_libro("9789999999990", "Sin ejemplares", "Nadie")
     p = pantalla(aplicacion, "prestamos")
     p.nuevo(None)
-    socio, libro, origen, destino, ejemplar = pagina.campos()
+    _, socio, _, libro, origen, destino, ejemplar = pagina.campos()
     assert origen.disabled and ejemplar.disabled and destino.disabled   # sin libro no hay nada que elegir
 
     elegir(libro, "El Aleph")
@@ -172,7 +172,7 @@ def test_nueva_reserva_ofrece_solo_libros_de_la_sede(app):
     servicios.sedes.crear("Sede Vacía", "Calle 1", None, None, None, "MONETARIA", 10)
     p = pantalla(aplicacion, "reservas")
     p.nueva(None)
-    socio, sede, libro = pagina.campos()
+    _, socio, sede, _, libro = pagina.campos()
     assert libro.disabled and not libro.options                    # sin sede no hay libros
 
     elegir(sede, "Biblioteca Central")
@@ -283,3 +283,35 @@ def test_pagar_multa_muestra_el_aviso_dentro_del_dialogo(app):
     assert pagina.dialogos and pagina.dialogos[-1].data.value == "Pago registrado"   # se ve sobre el modal
     assert not any(f.cells[-1].content.content.value == "Impaga" for f in tabla.rows)
     assert not p.filas[camila]["deuda"]                     # la pantalla de socios también se refrescó
+
+
+def test_buscar_socio_sin_tildes_ni_comas_lo_elige(app):
+    aplicacion, pagina = app
+    p = pantalla(aplicacion, "prestamos")
+    p.nuevo(None)
+    buscar_socio, socio, buscar_libro, libro, origen, destino, ejemplar = pagina.campos()
+    buscar_socio.value = "tomas herrera"
+    buscar_socio.on_change(None)
+    assert [o.text for o in socio.options] == [o.text for o in socio.options if "Herrera, Tomás" in o.text]
+    assert len(socio.options) == 1 and socio.value == socio.options[0].key   # única opción: queda elegida
+    buscar_libro.value = "aleph"
+    buscar_libro.on_change(None)
+    assert libro.value is not None and not origen.disabled   # elegir el libro carga las sedes de origen
+    buscar_socio.value = ""
+    buscar_socio.on_change(None)
+    assert len(socio.options) > 1                           # sin texto vuelven todas
+
+
+def test_buscar_libro_en_reserva_respeta_las_opciones_de_la_sede(app):
+    aplicacion, pagina = app
+    p = pantalla(aplicacion, "reservas")
+    p.nueva(None)
+    _, socio, sede, buscar_libro, libro = pagina.campos()
+    elegir(sede, "Sede Norte")
+    de_la_sede = [o.text for o in libro.options]
+    buscar_libro.value = "zzz"
+    buscar_libro.on_change(None)
+    assert libro.options == [] and libro.value is None
+    buscar_libro.value = ""
+    buscar_libro.on_change(None)
+    assert [o.text for o in libro.options] == de_la_sede    # vuelven las de la sede, no las de otra

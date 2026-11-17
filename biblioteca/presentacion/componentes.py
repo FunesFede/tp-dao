@@ -5,6 +5,7 @@ from typing import Callable
 
 import flet as ft
 
+from ..modelo.texto import coincide
 from ..reportes.estructura import formatear
 from .estilo import (HOVER, ACENTO_CLARO, LINEA, SUPERFICIE, SUPERFICIE_ALTA, FUENTE_SUBTITULO, TEXTO, TEXTO_SUAVE,
                      encabezado)
@@ -130,12 +131,44 @@ def opciones(pares) -> list[ft.DropdownOption]:
     return [ft.DropdownOption(key=str(clave), text=texto) for clave, texto in pares]
 
 
-def desplegable(etiqueta: str, pares, valor=None, ancho: int | None = None, al_cambiar=None,
-                filtrable: bool = False) -> ft.Dropdown:
-    """Sin ancho fijo ocupa todo el ancho disponible."""
+def desplegable(etiqueta: str, pares, valor=None, ancho: int | None = None, al_cambiar=None) -> ft.Dropdown:
+    """Sin ancho fijo ocupa todo el ancho disponible. Para buscar entre muchas opciones, sumarle un buscador()."""
     return ft.Dropdown(label=etiqueta, options=opciones(pares), value=str(valor) if valor is not None else None,
-                       width=ancho, on_select=al_cambiar, enable_filter=filtrable, editable=filtrable,
-                       menu_height=320)
+                       width=ancho, on_select=al_cambiar, menu_height=320)
+
+
+def buscador(desplegable: ft.Dropdown, etiqueta: str = "Buscar", ancho: int = 200) -> ft.TextField:
+    """Campo que acota las opciones del desplegable mientras se escribe.
+
+    Busca cada palabra en cualquier orden, sin distinguir tildes, mayúsculas ni signos («tomas herrera»
+    encuentra «Herrera, Tomás»). Si queda una sola opción, la elige. Va en un campo aparte porque el filtro
+    del desplegable de Flet compara el texto tal cual, y cambiarle las opciones mientras se escribe en él
+    le quita el foco.
+
+    Las pantallas pueden cargar opciones nuevas (desplegable.options = ...): si las opciones actuales no
+    son las que dejó el último filtro, se toman como la lista completa.
+    """
+    estado = {"todas": desplegable.options, "mostradas": desplegable.options}
+
+    def filtrar(e) -> None:
+        if desplegable.options is not estado["mostradas"]:
+            estado["todas"] = desplegable.options
+        visibles = [o for o in estado["todas"] if coincide(campo_busqueda.value, o.text)]
+        desplegable.options = estado["mostradas"] = visibles
+        claves = [o.key for o in visibles]
+        anterior = desplegable.value
+        if len(claves) == 1:
+            desplegable.value = claves[0]
+        elif desplegable.value not in claves:
+            desplegable.value = None
+        if desplegable.value != anterior and desplegable.on_select:
+            desplegable.on_select(None)
+        if e is not None:
+            e.page.update()
+
+    campo_busqueda = ft.TextField(label=etiqueta, width=ancho, dense=True, prefix_icon=ft.Icons.SEARCH,
+                                  on_change=filtrar)
+    return campo_busqueda
 
 
 def campo(etiqueta: str, valor=None, ancho: int | None = None, **kwargs) -> ft.TextField:

@@ -34,7 +34,6 @@ class LibroDAO:
 
         Los ejemplares de una sede dada de baja no cuentan como disponibles: no se pueden prestar.
         """
-        patron = f"%{texto.strip()}%"
         filas = self.cx.execute("""
             SELECT l.*,
                    COUNT(e.id) AS ejemplares,
@@ -43,10 +42,10 @@ class LibroDAO:
             FROM libro l
             LEFT JOIN ejemplar e ON e.libro_id = l.id
             LEFT JOIN sede s ON s.id = e.sede_id
-            WHERE l.titulo LIKE ? OR l.autor LIKE ? OR l.isbn LIKE ?
+            WHERE coincide(?, l.titulo || ' ' || l.autor || ' ' || l.isbn)
             GROUP BY l.id
             ORDER BY l.titulo
-        """, (patron, patron, patron)).fetchall()
+        """, (texto,)).fetchall()
         return [dict(f) | {"libro": self._mapear(f)} for f in filas]
 
     @staticmethod
