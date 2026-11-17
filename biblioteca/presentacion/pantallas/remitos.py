@@ -5,7 +5,7 @@ import flet as ft
 from ...modelo import ResultadoRecepcion
 from ...reportes.estructura import formatear
 from ..componentes import Tabla, boton, campo, desplegable, etiqueta_estado, pastilla, titulo_pantalla
-from ..estilo import ACENTO, encabezado
+from ..estilo import ACENTO, LINEA, SUPERFICIE, encabezado
 
 ACCIONES_POR_ESTADO = {
     "EN_PREPARACION": {"despachar", "anular"},
@@ -34,7 +34,11 @@ class PantallaRemitos:
             "extravio": boton("Declarar extravío", ft.Icons.REPORT_PROBLEM, self.declarar_extravio),
             "anular": boton("Anular", ft.Icons.CANCEL_OUTLINED, self.anular),
         }
-        self.btn_detalle = boton("Ocultar detalle", ft.Icons.VISIBILITY_OFF_OUTLINED, self.alternar_detalle)
+        # Flecha entre la tabla y el detalle: hacia la derecha oculta el panel, hacia la izquierda lo muestra
+        self.btn_detalle = ft.IconButton(
+            icon=ft.Icons.CHEVRON_RIGHT, tooltip="Ocultar detalle", on_click=self.alternar_detalle,
+            icon_color=ACENTO, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=4),
+                                                    side=ft.BorderSide(1, LINEA), bgcolor=SUPERFICIE))
         self.panel_detalle: ft.Container | None = None
 
     def build(self) -> ft.Control:
@@ -53,9 +57,9 @@ class PantallaRemitos:
             titulo_pantalla("Remitos", "Empaquetado, despacho, tránsito y recepción de ejemplares entre sedes"),
             ft.Text("Los remitos son generados automáticamente al registrar un préstamo interbibliotecario o al "
                     "devolver un ejemplar a su sede de origen.", size=12, color=ft.Colors.ON_SURFACE_VARIANT),
-            ft.Row(controls=[self.solo_en_curso, self.btn_detalle], spacing=20),
-            ft.Row(controls=[ft.Column(controls=[self.tabla.build()], expand=7), detalle], expand=True,
-                   vertical_alignment=ft.CrossAxisAlignment.START, spacing=20),
+            self.solo_en_curso,
+            ft.Row(controls=[ft.Column(controls=[self.tabla.build()], expand=7), self.btn_detalle, detalle],
+                   expand=True, vertical_alignment=ft.CrossAxisAlignment.START, spacing=8),
         ], spacing=12, expand=True)
 
     def refrescar(self) -> None:
@@ -71,9 +75,8 @@ class PantallaRemitos:
         if self.panel_detalle is None:
             return
         self.panel_detalle.visible = not self.panel_detalle.visible if visible is None else visible
-        self.btn_detalle.content = "Ocultar detalle" if self.panel_detalle.visible else "Mostrar detalle"
-        self.btn_detalle.icon = (ft.Icons.VISIBILITY_OFF_OUTLINED if self.panel_detalle.visible
-                                 else ft.Icons.VISIBILITY_OUTLINED)
+        self.btn_detalle.icon = ft.Icons.CHEVRON_RIGHT if self.panel_detalle.visible else ft.Icons.CHEVRON_LEFT
+        self.btn_detalle.tooltip = "Ocultar detalle" if self.panel_detalle.visible else "Mostrar detalle"
 
     def al_seleccionar(self, remito_id: int | None) -> None:
         self.detalle = self.app.servicios.remitos.detalle(remito_id) if remito_id else None
