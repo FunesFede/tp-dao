@@ -88,7 +88,7 @@ def test_recibir_remito_con_incidencia(app):
     p.tabla._seleccionar(en_transito)
     assert p.botones["recibir"].visible and not p.botones["despachar"].visible
     p.recibir(None)
-    (resultado,) = pagina.campos()
+    resultado, _ = pagina.campos()                  # el remito en tránsito del seed lleva dos ejemplares
     elegir(resultado, "Dañado")
     pagina.aceptar()
     assert "recibido" in pagina.ultimo_mensaje().lower()

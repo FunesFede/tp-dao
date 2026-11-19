@@ -295,6 +295,14 @@ class CargaDePrueba:
         # Socio en el límite de préstamos abiertos (s3: L8, I7 y este)
         e(68, "11:00", self.prestar("L16", "s3", "Bestiario", "S"))
 
+        # Remitos con más de un ejemplar: cada préstamo se suma al remito en preparación entre las mismas sedes
+        e(2, "11:00", self.prestar("I14", "s7", "La tregua", "C", "S"))           # viaja con I1 y vuelve con él
+        e(4, "10:30", self.entregar("I14"))
+        e(20, "12:30", self.devolver("I14", "S"))
+        e(15, "11:00", self.prestar("I15", "s9", "Mapa vial de la provincia de Córdoba", "G", "S"))  # extraviado con I5
+        e(67, "11:00", self.prestar("I16", "s10", "Don Segundo Sombra", "S", "C"))  # en tránsito con I8
+        e(69, "09:15", self.prestar("I17", "s5", "El túnel", "N", "C"))           # en preparación con I9
+
         # Remito despachado que todavía no registró tránsito (Central -> Norte)
         e(69, "10:00", self.prestar("I12", "s8", "Facundo", "C", "N"))
         e(69, "15:00", self.despachar("I12"))
